@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../lib/axios';
 import toast from 'react-hot-toast';
+import { useAuthStore } from '../../store/authStore';
 
 interface DashboardStats {
   todaySales: number;
@@ -19,7 +20,8 @@ interface DashboardStats {
 }
 
 export const DistributorDashboard = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
+  const { logout } = useAuthStore();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 

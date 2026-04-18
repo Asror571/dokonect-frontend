@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Phone, Camera, AlertTriangle, Navigation } from 'lucide-react';
 import { DeliveryStepBar } from '../../components/driver/DeliveryStepBar';
@@ -11,7 +11,7 @@ export const ActiveDeliveryPage: React.FC = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [showProblemModal, setShowProblemModal] = useState(false);
+//  const [showProblemModal, setShowProblemModal] = useState(false);
 
   const { data: order } = useQuery({
     queryKey: ['active-delivery', orderId],
@@ -133,7 +133,7 @@ export const ActiveDeliveryPage: React.FC = () => {
 
         {/* Problem Report */}
         <button
-          onClick={() => setShowProblemModal(true)}
+          // onClick={() => setShowProblemModal(true)}
           className="w-full flex items-center justify-center gap-2 py-3 bg-red-500/20 text-red-400 rounded-xl hover:bg-red-500/30 transition-colors"
         >
           <AlertTriangle className="w-5 h-5" />

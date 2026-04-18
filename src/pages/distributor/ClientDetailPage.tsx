@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '../../lib/axios';
+import  api  from '../../lib/axios';
 import { ArrowLeft, Phone, MapPin, Package, MessageSquare, User, Calendar, ShoppingCart, CreditCard} from 'lucide-react';
 import { Badge } from '../../components/ui/Badge';
 import { format } from 'date-fns';
@@ -97,12 +97,12 @@ const ClientDetailPage = () => {
     VIP: 'bg-purple-500',
   };
 
-  const tierLabels = {
-    BRONZE: 'Bronza',
-    SILVER: 'Kumush',
-    GOLD: 'Oltin',
-    VIP: 'VIP',
-  };
+  // const tierLabels = {
+  //   BRONZE: 'Bronza',
+  //   SILVER: 'Kumush',
+  //   GOLD: 'Oltin',
+  //   VIP: 'VIP',
+  // };
 
   return (
     <div className="fade-in space-y-6">
@@ -125,8 +125,8 @@ const ClientDetailPage = () => {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl font-bold text-slate-900">{client.storeName || client.user?.name}</h1>
-                <Badge className={`${tierColors[client.tier]} text-white`}>
-                  {tierLabels[client.tier]}
+                <Badge className={`${tierColors[client.tier as keyof typeof tierColors]} text-white`}>
+                  {tierColors[client.tier as keyof typeof tierColors]}
                 </Badge>
               </div>
               <p className="text-slate-500 mt-1">{client.user?.name}</p>

@@ -7,7 +7,7 @@ import { Badge } from '../../components/ui/Badge';
 import { motion } from 'framer-motion';
 
 const FinancePage = () => {
-    const { data: summary, isLoading: isSummaryLoading } = useQuery({
+    const { data: summary} = useQuery({
         queryKey: ['finance-summary'],
         queryFn: async () => {
             const res = await api.get('/client/finance/summary');

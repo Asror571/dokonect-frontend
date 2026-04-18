@@ -33,7 +33,7 @@ const SalesChart: React.FC<SalesChartProps> = ({ data, title = 'Sotuv grafigi' }
           tickLine={false}
         />
         <Tooltip
-          formatter={(v: number) => [`${v.toLocaleString('uz-UZ')} UZS`, 'Daromad']}
+          formatter={(v) => [`${Number(v ?? 0).toLocaleString('uz-UZ')} UZS`, 'Daromad']}
           labelFormatter={(l) => { try { return format(parseISO(l), 'dd MMM yyyy'); } catch { return l; } }}
           contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }}
         />

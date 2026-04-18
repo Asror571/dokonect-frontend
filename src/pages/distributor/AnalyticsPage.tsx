@@ -136,7 +136,7 @@ const AnalyticsPage = () => {
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                 />
                 <Bar dataKey="value" fill="#6366f1" radius={[0, 8, 8, 0]} barSize={25}>
-                  {topProducts.map((_, index) => (
+                  {topProducts.map((_: any, index: number) => (
                     <Cell key={`cell-${index}`} fill={['#6366f1', '#fbbf24', '#38bdf8', '#4ade80', '#f472b6'][index % 5]} />
                   ))}
                 </Bar>

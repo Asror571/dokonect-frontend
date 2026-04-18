@@ -1,10 +1,8 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import api from '../lib/axios';
 
 export const useAuth = () => {
-  const navigate = useNavigate();
   const { user, accessToken, isAuthenticated, isLoading, setAuth, clearAuth, setLoading } = useAuthStore();
 
   // Initialize loading state on mount

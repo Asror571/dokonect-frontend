@@ -19,7 +19,7 @@ const TopProductsChart: React.FC<TopProductsChartProps> = ({ data, title = 'Top 
           tickFormatter={(v) => v.length > 14 ? v.slice(0, 14) + '…' : v}
         />
         <Tooltip
-          formatter={(v: number) => [v, 'Sotilgan']}
+          formatter={(v) => [Number(v ?? 0), 'Sotilgan']}
           contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }}
         />
         <Bar dataKey="totalSold" fill="#7c3aed" radius={[0, 6, 6, 0]} />

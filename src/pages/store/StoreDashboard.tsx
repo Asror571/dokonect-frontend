@@ -1,8 +1,8 @@
-import React from 'react';
+
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
-import { Package, Truck, Clock, DollarSign, ArrowRight, Wallet, Users, ShoppingCart, Zap, TrendingUp } from 'lucide-react';
+import { Package, Clock, ArrowRight, Wallet, Users, ShoppingCart, Zap, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '../../components/ui/Badge';
 import { format } from 'date-fns';

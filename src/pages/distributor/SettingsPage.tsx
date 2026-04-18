@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { User, Bell, Shield, Globe, Building2, Save, X, Mail, Phone, MapPin } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
@@ -8,7 +8,6 @@ import toast from 'react-hot-toast';
 
 const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'security'>('profile');
-  const queryClient = useQueryClient();
 
   const { data: profileResponse, isLoading } = useQuery({
     queryKey: ['distributor-profile'],
@@ -83,10 +82,10 @@ const SettingsPage = () => {
                   <User className="w-5 h-5 text-sky-500" /> Shaxsiy Ma'lumotlar
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input label="Kompaniya Nomi" defaultValue={profile.companyName} icon={<Building2 className="w-4 h-4" />} />
-                  <Input label="Distribyutor ID" defaultValue={`DIST-${profile.id?.slice(0,8)}`} icon={<Shield className="w-4 h-4" />} readOnly />
-                  <Input label="Email" defaultValue={profile.email} icon={<Mail className="w-4 h-4" />} />
-                  <Input label="Telefon" defaultValue={profile.phone} icon={<Phone className="w-4 h-4" />} />
+                  <Input label="Kompaniya Nomi" defaultValue={profile.companyName} leftIcon={<Building2 className="w-4 h-4" />} />
+                  <Input label="Distribyutor ID" defaultValue={`DIST-${profile.id?.slice(0,8)}`} leftIcon={<Shield className="w-4 h-4" />} readOnly />
+                  <Input label="Email" defaultValue={profile.email} leftIcon={<Mail className="w-4 h-4" />} />
+                  <Input label="Telefon" defaultValue={profile.phone} leftIcon={<Phone className="w-4 h-4" />} />
                 </div>
               </section>
 
@@ -95,9 +94,9 @@ const SettingsPage = () => {
                    Manzil va Hudud
                 </h3>
                 <div className="grid grid-cols-1 gap-4">
-                  <Input label="Kompaniya Manzili" defaultValue={profile.address} icon={<MapPin className="w-4 h-4" />} />
+                  <Input label="Kompaniya Manzili" defaultValue={profile.address} leftIcon={<MapPin className="w-4 h-4" />} />
                   <div className="grid grid-cols-2 gap-4">
-                    <Input label="Website" placeholder="https://company.uz" icon={<Globe className="w-4 h-4" />} />
+                    <Input label="Website" placeholder="https://company.uz" leftIcon={<Globe className="w-4 h-4" />} />
                     <div className="space-y-1.5">
                       <label className="block text-sm font-bold text-slate-700">Asosiy Hudud</label>
                       <select className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-sky-500 transition-all font-medium">

@@ -1,12 +1,11 @@
-import React from 'react';
+
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '../../components/ui/Badge';
 import { format } from 'date-fns';
 import { uz } from 'date-fns/locale';
-import { Search, Filter, ClipboardList, Package, Truck, Clock } from 'lucide-react';
-import { Input } from '../../components/ui/Input';
+import { Filter, ClipboardList, Package, Truck, Clock } from 'lucide-react';
 
 const StoreOrdersPage = () => {
   const navigate = useNavigate();

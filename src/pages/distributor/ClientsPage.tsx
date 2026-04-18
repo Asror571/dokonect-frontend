@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '../../lib/axios';
+import  api from '../../lib/axios';
 import { useNavigate } from 'react-router-dom';
 import { Users, Phone, MapPin, Package, DollarSign, AlertCircle, CheckCircle, XCircle, Search, ChevronRight, Star } from 'lucide-react';
 import { Badge } from '../../components/ui/Badge';
@@ -56,7 +56,7 @@ const ClientsPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'debt'>('all');
 
-  const { data: clients = [], isLoading: clientsLoading } = useQuery({
+  const { data: clients = [] } = useQuery({
     queryKey: ['distributor-clients'],
     queryFn: fetchClients,
   });

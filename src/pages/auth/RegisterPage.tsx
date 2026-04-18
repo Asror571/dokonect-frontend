@@ -35,9 +35,19 @@ const RegisterPage = () => {
   const { mutate, isPending } = useMutation({
     mutationFn: registerFn,
     onSuccess: (data) => {
-      setAuth({ id: data.data.id, email: data.data.email, role: data.data.role, name: data.data.name }, data.data.token);
+      setAuth(
+        {
+          id: data.data.id,
+          email: data.data.email,
+          role: data.data.role,
+          name: data.data.name,
+          phone: data.data.phone || '',       // ← phone qo'shildi
+        },
+        data.data.accessToken || data.data.token,  // ← accessToken
+        data.data.refreshToken || '',              // ← refreshToken
+      );
       toast.success("Muvaffaqiyatli ro'yxatdan o'tdingiz!");
-      navigate(data.data.role === 'STORE_OWNER' ? '/catalog' : '/distributor/products');
+      navigate(data.data.role === 'STORE_OWNER' ? '/store/dashboard' : '/distributor/dashboard');
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Xatolik yuz berdi');

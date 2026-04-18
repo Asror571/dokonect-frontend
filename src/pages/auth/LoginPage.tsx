@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, Lock, Phone, Zap } from 'lucide-react';
 import { api } from '../../services/api';
@@ -7,7 +6,6 @@ import { useAuthStore } from '../../store/authStore';
 import toast from 'react-hot-toast';
 
 export const LoginPage: React.FC = () => {
-  const navigate = useNavigate();
   const { setAuth } = useAuthStore();
   const [loginType, setLoginType] = useState<'email' | 'phone'>('phone');
   const [email, setEmail] = useState('');

@@ -7,8 +7,7 @@
     "dev": "vite",
     "start": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "vercel-install": "npm install --legacy-peer-deps"
+    "preview": "vite preview"
   },
   "keywords": [],
   "author": "",
@@ -33,7 +32,6 @@
     "recharts": "^3.8.0",
     "socket.io-client": "^4.8.3",
     "tailwind-merge": "^3.5.0",
-    "vite-plugin-pwa": "^1.2.0",
     "workbox-window": "^7.4.0",
     "zod": "^4.3.6",
     "zustand": "^5.0.12"
@@ -45,7 +43,7 @@
     "autoprefixer": "^10.4.27",
     "postcss": "^8.5.8",
     "tailwindcss": "^4.2.2",
-     "vite": "^7.0.0",
+    "vite": "^7.0.0",
     "@vitejs/plugin-react": "^5.0.0",
     "vite-plugin-pwa": "^1.2.0"
   }

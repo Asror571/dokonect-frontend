@@ -1,37 +1,43 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { fetchDistributorOrdersFn, updateOrderStatusFn } from '../../api/order.api';
-import { MapPin, PackageCheck, Loader2, ChevronDown, Eye } from 'lucide-react';
+import { getOrdersFn, updateOrderStatusFn } from '../../api/order.api';
+import { MapPin, PackageCheck, Loader2, ChevronDown, Eye, Search } from 'lucide-react';
 import { Badge } from '../../components/ui/Badge';
 import { format } from 'date-fns';
 import { uz } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 
-const statusOptions = [
-  { value: 'NEW',        label: 'Yangi',          variant: 'warning'   },
-  { value: 'ACCEPTED',   label: 'Qabul qilindi',  variant: 'primary'   },
-  { value: 'REJECTED',   label: 'Rad etildi',     variant: 'danger'    },
-  { value: 'ASSIGNED',   label: 'Assign qilindi', variant: 'info'      },
-  { value: 'IN_TRANSIT', label: 'Yo\'lda',         variant: 'info'      },
-  { value: 'DELIVERED',  label: 'Yetkazildi',     variant: 'success'   },
-  { value: 'RETURNED',   label: 'Qaytarildi',     variant: 'warning'   },
-  { value: 'CANCELLED',  label: 'Bekor qilindi',  variant: 'danger'    },
-  { value: 'PAID',       label: 'To\'landi',       variant: 'success'   },
+const STATUS_OPTIONS = [
+  { value: 'NEW',        label: 'Yangi',          variant: 'warning'  },
+  { value: 'ACCEPTED',   label: 'Qabul qilindi',  variant: 'primary'  },
+  { value: 'REJECTED',   label: 'Rad etildi',     variant: 'danger'   },
+  { value: 'ASSIGNED',   label: 'Tayinlandi',     variant: 'info'     },
+  { value: 'IN_TRANSIT', label: "Yo'lda",         variant: 'info'     },
+  { value: 'DELIVERED',  label: 'Yetkazildi',     variant: 'success'  },
+  { value: 'RETURNED',   label: 'Qaytarildi',     variant: 'warning'  },
+  { value: 'CANCELLED',  label: 'Bekor qilindi',  variant: 'danger'   },
+  { value: 'PAID',       label: "To'landi",       variant: 'success'  },
 ];
 
 const DistributorOrdersPage = () => {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
-  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const navigate    = useNavigate();
 
+  const [updatingId,     setUpdatingId]     = useState<string | null>(null);
+  const [filterStatus,   setFilterStatus]   = useState('');
+  const [searchQuery,    setSearchQuery]    = useState('');
+
+  // ── Fetch ─────────────────────────────────────────────────────────────────
   const { data: fetchRes, isLoading } = useQuery({
-    queryKey: ['distributor-orders'],
-    queryFn: fetchDistributorOrdersFn,
+    queryKey: ['distributor-orders', filterStatus],
+    queryFn: () => getOrdersFn({ status: filterStatus || undefined }),
   });
 
+  // ── Update status ─────────────────────────────────────────────────────────
   const { mutate: updateStatus } = useMutation({
-    mutationFn: updateOrderStatusFn,
+    mutationFn: ({ id, status }: { id: string; status: string }) =>
+      updateOrderStatusFn({ id, data: { status: status as any } }),
     onSuccess: () => {
       toast.success('Holat yangilandi');
       queryClient.invalidateQueries({ queryKey: ['distributor-orders'] });
@@ -43,7 +49,16 @@ const DistributorOrdersPage = () => {
     },
   });
 
-  const orders = fetchRes?.data?.orders || [];
+  const allOrders: any[] = fetchRes?.data?.orders || fetchRes?.orders || [];
+
+  const orders = allOrders.filter((o: any) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      o.client?.storeName?.toLowerCase().includes(q) ||
+      o.id?.toLowerCase().includes(q)
+    );
+  });
 
   if (isLoading) {
     return (
@@ -55,9 +70,36 @@ const DistributorOrdersPage = () => {
 
   return (
     <div className="fade-in">
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-slate-900">Buyurtmalar</h1>
-        <p className="text-slate-500 text-sm mt-0.5">{orders.length} ta buyurtma</p>
+      {/* Header */}
+      <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold text-slate-900">Buyurtmalar</h1>
+          <p className="text-slate-500 text-sm mt-0.5">{allOrders.length} ta buyurtma</p>
+        </div>
+
+        {/* Filters */}
+        <div className="flex flex-wrap gap-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Do'kon yoki ID..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20 bg-white"
+            />
+          </div>
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20 bg-white"
+          >
+            <option value="">Barcha holat</option>
+            {STATUS_OPTIONS.map((s) => (
+              <option key={s.value} value={s.value}>{s.label}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {orders.length === 0 ? (
@@ -75,7 +117,10 @@ const DistributorOrdersPage = () => {
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/60">
                   {['Buyurtmachi', 'Sana', 'Manzil', 'Summa', 'Holat', 'Boshqaruv', ''].map((h) => (
-                    <th key={h} className="px-5 py-3.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">
+                    <th
+                      key={h}
+                      className="px-5 py-3.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap"
+                    >
                       {h}
                     </th>
                   ))}
@@ -83,7 +128,7 @@ const DistributorOrdersPage = () => {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {orders.map((order: any) => {
-                  const statusInfo = statusOptions.find(s => s.value === order.status);
+                  const statusInfo = STATUS_OPTIONS.find((s) => s.value === order.status);
                   return (
                     <tr key={order.id} className="hover:bg-slate-50/50 transition-colors">
                       {/* Buyer */}
@@ -93,8 +138,12 @@ const DistributorOrdersPage = () => {
                             {order.client?.storeName?.charAt(0) || 'S'}
                           </div>
                           <div>
-                            <p className="text-sm font-semibold text-slate-800 leading-none">{order.client?.storeName}</p>
-                            <p className="text-xs text-slate-400 mt-0.5">{order.client?.phone || order.client?.user?.phone}</p>
+                            <p className="text-sm font-semibold text-slate-800 leading-none">
+                              {order.client?.storeName}
+                            </p>
+                            <p className="text-xs text-slate-400 mt-0.5">
+                              {order.client?.phone || order.client?.user?.phone}
+                            </p>
                           </div>
                         </div>
                       </td>
@@ -102,32 +151,33 @@ const DistributorOrdersPage = () => {
                       {/* Date */}
                       <td className="px-5 py-4 whitespace-nowrap">
                         <p className="text-sm font-medium text-slate-700">
-                          {format(new Date(order.createdAt), "dd MMM yyyy", { locale: uz })}
+                          {format(new Date(order.createdAt), 'dd MMM yyyy', { locale: uz })}
                         </p>
                         <p className="text-xs text-slate-400 mt-0.5">
-                          {format(new Date(order.createdAt), "HH:mm")}
+                          {format(new Date(order.createdAt), 'HH:mm')}
                         </p>
                       </td>
 
                       {/* Address */}
-                      <td className="px-5 py-4 max-w-[180px]">
+                      <td className="px-5 py-4 max-w-[160px]">
                         <div className="flex items-start gap-1.5">
                           <MapPin className="w-3.5 h-3.5 text-slate-400 mt-0.5 shrink-0" />
-                          <div>
-                            <p className="text-sm text-slate-700 line-clamp-1">{order.address}</p>
-                            {order.note && (
-                              <p className="text-xs text-slate-400 italic line-clamp-1 mt-0.5">"{order.note}"</p>
-                            )}
-                          </div>
+                          <p className="text-sm text-slate-700 line-clamp-2">
+                            {typeof order.deliveryAddress === 'object'
+                              ? order.deliveryAddress?.street || order.deliveryAddress?.address || JSON.stringify(order.deliveryAddress)
+                              : order.address || '—'}
+                          </p>
                         </div>
                       </td>
 
                       {/* Amount */}
                       <td className="px-5 py-4 whitespace-nowrap">
                         <p className="text-sm font-bold text-violet-600">
-                          {order.totalAmount.toLocaleString('uz-UZ')} UZS
+                          {(order.totalAmount || 0).toLocaleString('uz-UZ')} UZS
                         </p>
-                        <p className="text-[10px] text-slate-400 mt-0.5">{order.items.length} tovar</p>
+                        <p className="text-[10px] text-slate-400 mt-0.5">
+                          {order.items?.length || 0} tovar
+                        </p>
                       </td>
 
                       {/* Status badge */}
@@ -147,10 +197,13 @@ const DistributorOrdersPage = () => {
                           <div className="relative">
                             <select
                               value={order.status}
-                              onChange={(e) => { setUpdatingId(order.id); updateStatus({ id: order.id, status: e.target.value }); }}
+                              onChange={(e) => {
+                                setUpdatingId(order.id);
+                                updateStatus({ id: order.id, status: e.target.value });
+                              }}
                               className="appearance-none h-9 bg-white border border-slate-200 rounded-lg pl-3 pr-8 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 cursor-pointer shadow-sm"
                             >
-                              {statusOptions.map((opt) => (
+                              {STATUS_OPTIONS.map((opt) => (
                                 <option key={opt.value} value={opt.value}>{opt.label}</option>
                               ))}
                             </select>
@@ -159,15 +212,15 @@ const DistributorOrdersPage = () => {
                         )}
                       </td>
 
-                       {/* Detail link */}
-                       <td className="px-5 py-4">
-                         <button
-                           onClick={() => navigate(`/distributor/orders/${order.id}`)}
-                           className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-50 text-violet-600 rounded-lg text-xs font-medium hover:bg-violet-100 transition-colors"
-                         >
-                           <Eye className="w-3.5 h-3.5" /> Batafsil
-                         </button>
-                       </td>
+                      {/* Detail */}
+                      <td className="px-5 py-4">
+                        <button
+                          onClick={() => navigate(`/distributor/orders/${order.id}`)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-50 text-violet-600 rounded-lg text-xs font-medium hover:bg-violet-100 transition-colors"
+                        >
+                          <Eye className="w-3.5 h-3.5" /> Batafsil
+                        </button>
+                      </td>
                     </tr>
                   );
                 })}

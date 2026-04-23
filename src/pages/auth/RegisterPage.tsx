@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
 import { Mail, Lock, Store, Briefcase, User, Phone, MapPin, ArrowRight, Zap } from 'lucide-react';
 import { registerFn } from '../../api/auth.api';
-import { useAuthStore } from '../../store/auth.store';
+import { useAuthStore } from '../../store/authStore';   // ← authStore (LoginPage bilan bir xil)
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { cn } from '../../components/ui/Button';
@@ -15,7 +15,7 @@ const registerSchema = z.object({
   name:     z.string().min(2, 'Kamida 2 belgi'),
   email:    z.string().email("Noto'g'ri email"),
   password: z.string().min(6, 'Kamida 6 belgi'),
-  role:     z.enum(['STORE_OWNER', 'DISTRIBUTOR']),
+  role:     z.enum(['STORE', 'DISTRIBUTOR']),   // ← STORE_OWNER → STORE (API talabi)
   address:  z.string().min(5, 'Manzilni kiriting'),
   phone:    z.string().min(7, 'Telefon raqam kiriting'),
 });
@@ -23,7 +23,7 @@ type RegisterForm = z.infer<typeof registerSchema>;
 
 const RegisterPage = () => {
   const navigate = useNavigate();
-  const setAuth = useAuthStore((s) => s.setAuth);
+  const { setAuth } = useAuthStore();   // ← destructure qilindi
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
@@ -35,19 +35,38 @@ const RegisterPage = () => {
   const { mutate, isPending } = useMutation({
     mutationFn: registerFn,
     onSuccess: (data) => {
+      // API response: { success, data: { user, accessToken, refreshToken } }
+      // yoki flat: { success, data: { id, name, role, accessToken, ... } }
+      const user    = data.data?.user    ?? data.data;
+      const accTok  = data.data?.accessToken  ?? data.data?.token  ?? '';
+      const refTok  = data.data?.refreshToken ?? '';
+
       setAuth(
         {
-          id: data.data.id,
-          email: data.data.email,
-          role: data.data.role,
-          name: data.data.name,
-          phone: data.data.phone || '',       // ← phone qo'shildi
+          id:    user.id,
+          name:  user.name,
+          email: user.email  ?? '',
+          phone: user.phone  ?? '',
+          role:  user.role,
         },
-        data.data.accessToken || data.data.token,  // ← accessToken
-        data.data.refreshToken || '',              // ← refreshToken
+        accTok,
+        refTok,
       );
+
       toast.success("Muvaffaqiyatli ro'yxatdan o'tdingiz!");
-      navigate(data.data.role === 'STORE_OWNER' ? '/store/dashboard' : '/distributor/dashboard');
+
+      // Role ga qarab yo'naltirish
+      if (user.role === 'STORE') {
+        navigate('/store/dashboard');
+      } else if (user.role === 'DISTRIBUTOR') {
+        navigate('/distributor/dashboard');
+      } else if (user.role === 'DRIVER') {
+        navigate('/driver/dashboard');
+      } else if (user.role === 'ADMIN') {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/');
+      }
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Xatolik yuz berdi');
@@ -62,7 +81,9 @@ const RegisterPage = () => {
           <div className="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center shadow-lg shadow-violet-500/30">
             <Zap className="w-4 h-4 text-white" />
           </div>
-          <span className="font-bold text-slate-800 text-lg">Doko<span className="text-violet-600">nect</span></span>
+          <span className="font-bold text-slate-800 text-lg">
+            Doko<span className="text-violet-600">nect</span>
+          </span>
         </div>
 
         <div className="bg-white rounded-2xl border border-slate-200 shadow-xl shadow-slate-200/50 p-8">
@@ -80,7 +101,7 @@ const RegisterPage = () => {
               <div className="grid grid-cols-2 gap-3">
                 {[
                   { value: 'DISTRIBUTOR', icon: Briefcase, label: 'Distribyutor' },
-                  { value: 'STORE_OWNER', icon: Store,     label: "Do'kon egasi" },
+                  { value: 'STORE',       icon: Store,     label: "Do'kon egasi" }, // ← STORE
                 ].map(({ value, icon: Icon, label }) => (
                   <button
                     key={value}
@@ -95,7 +116,9 @@ const RegisterPage = () => {
                   >
                     <div className={cn(
                       'w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
-                      selectedRole === value ? 'bg-violet-600 text-white' : 'bg-slate-100 text-slate-500'
+                      selectedRole === value
+                        ? 'bg-violet-600 text-white'
+                        : 'bg-slate-100 text-slate-500'
                     )}>
                       <Icon className="w-4 h-4" />
                     </div>
@@ -123,7 +146,7 @@ const RegisterPage = () => {
               />
               <Input
                 label="Telefon"
-                placeholder="+998 90 123 45 67"
+                placeholder="+998901234567"
                 leftIcon={<Phone className="w-4 h-4" />}
                 error={errors.phone?.message}
                 {...register('phone')}

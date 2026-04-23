@@ -1,69 +1,51 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Lock, Phone, Zap } from 'lucide-react';
-import { api } from '../../services/api';
+import api from '../../api/api';             // ← services/api emas, api/api (interceptorli)
 import { useAuthStore } from '../../store/authStore';
 import toast from 'react-hot-toast';
 
 export const LoginPage: React.FC = () => {
   const { setAuth } = useAuthStore();
   const [loginType, setLoginType] = useState<'email' | 'phone'>('phone');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
+  const [email, setEmail]       = useState('');
+  const [phone, setPhone]       = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading]   = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      console.log('🔐 Attempting login...', { phone, email, loginType });
-      
-      const response = await api.post('/auth/login', {
+      const response = await api.post('/api/auth/login', {
         ...(loginType === 'email' ? { email } : { phone }),
         password,
       });
 
-      console.log('✅ Login response:', response.data);
+      // API response: { success, data: { user, accessToken, refreshToken } }
+      const payload      = response.data?.data ?? response.data;
+      const user         = payload?.user        ?? payload;
+      const accessToken  = payload?.accessToken ?? payload?.token  ?? '';
+      const refreshToken = payload?.refreshToken ?? '';
 
-      const { user, accessToken, refreshToken } = response.data.data;
-      
-      console.log('👤 User:', user);
-      console.log('🔑 Token:', accessToken?.substring(0, 20) + '...');
-      
-      // Update Global State
       setAuth(user, accessToken, refreshToken);
-
-      console.log('💾 Auth state updated');
-      console.log('📦 localStorage check:', {
-        token: localStorage.getItem('accessToken')?.substring(0, 20) + '...',
-        user: localStorage.getItem('user') ? 'saved' : 'missing',
-        authStore: localStorage.getItem('auth-storage') ? 'saved' : 'missing'
-      });
-
       toast.success('Xush kelibsiz!');
 
-      // Redirect based on role
-      console.log('🚀 Redirecting to:', user.role);
-      
+      // Role ga qarab yo'naltirish
       let redirectPath = '/';
       if (user.role === 'DISTRIBUTOR') {
         redirectPath = '/distributor/dashboard';
-      } else if (user.role === 'CLIENT') {
+      } else if (user.role === 'STORE' || user.role === 'CLIENT') {
         redirectPath = '/store/dashboard';
       } else if (user.role === 'DRIVER') {
         redirectPath = '/driver/dashboard';
       } else if (user.role === 'ADMIN') {
         redirectPath = '/admin/dashboard';
       }
-      
-      console.log('🎯 Navigating to:', redirectPath);
-      
-      // Force immediate redirect with location.replace
+
       window.location.replace(redirectPath);
     } catch (error: any) {
-      console.error('❌ Login error:', error);
       toast.error(error.response?.data?.message || 'Login xatosi');
     } finally {
       setLoading(false);
@@ -86,34 +68,28 @@ export const LoginPage: React.FC = () => {
           <div className="inline-flex items-center justify-center w-20 h-20 bg-indigo-600 rounded-3xl mb-6 shadow-2xl shadow-indigo-600/20 transform -rotate-6">
             <Zap className="w-10 h-10 text-white fill-white" />
           </div>
-          <h1 className="text-3xl font-black text-white tracking-tighter">Doko<span className="text-indigo-400">nect</span></h1>
+          <h1 className="text-3xl font-black text-white tracking-tighter">
+            Doko<span className="text-indigo-400">nect</span>
+          </h1>
           <p className="text-slate-400 mt-2 font-medium">B2B Platformaning kelajagi</p>
         </div>
 
         {/* Login Type Toggle */}
         <div className="flex p-1 bg-white/5 rounded-2xl mb-8 border border-white/5">
-          <button
-            type="button"
-            onClick={() => setLoginType('phone')}
-            className={`flex-1 py-4 px-4 rounded-xl text-sm font-bold transition-all ${
-              loginType === 'phone'
-                ? 'bg-white text-slate-900 shadow-xl'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            Telefon
-          </button>
-          <button
-            type="button"
-            onClick={() => setLoginType('email')}
-            className={`flex-1 py-4 px-4 rounded-xl text-sm font-bold transition-all ${
-              loginType === 'email'
-                ? 'bg-white text-slate-900 shadow-xl'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            Email
-          </button>
+          {(['phone', 'email'] as const).map((type) => (
+            <button
+              key={type}
+              type="button"
+              onClick={() => setLoginType(type)}
+              className={`flex-1 py-4 px-4 rounded-xl text-sm font-bold transition-all ${
+                loginType === type
+                  ? 'bg-white text-slate-900 shadow-xl'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              {type === 'phone' ? 'Telefon' : 'Email'}
+            </button>
+          ))}
         </div>
 
         {/* Login Form */}
@@ -125,7 +101,7 @@ export const LoginPage: React.FC = () => {
               </label>
               <div className="relative group">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors">
-                    <Mail className="w-5 h-5" />
+                  <Mail className="w-5 h-5" />
                 </div>
                 <input
                   type="email"
@@ -144,7 +120,7 @@ export const LoginPage: React.FC = () => {
               </label>
               <div className="relative group">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors">
-                    <Phone className="w-5 h-5" />
+                  <Phone className="w-5 h-5" />
                 </div>
                 <input
                   type="tel"
@@ -159,16 +135,21 @@ export const LoginPage: React.FC = () => {
           )}
 
           <div>
-             <div className="flex items-center justify-between mb-2 translate-x-1">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+            <div className="flex items-center justify-between mb-2 translate-x-1">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
                 Parol
-                </label>
-                <button type="button" className="text-[10px] font-black text-indigo-400 uppercase tracking-widest hover:text-indigo-300">Unutdingizmi?</button>
-             </div>
+              </label>
+              <button
+                type="button"
+                className="text-[10px] font-black text-indigo-400 uppercase tracking-widest hover:text-indigo-300"
+              >
+                Unutdingizmi?
+              </button>
+            </div>
             <div className="relative group">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors">
-                    <Lock className="w-5 h-5" />
-                </div>
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors">
+                <Lock className="w-5 h-5" />
+              </div>
               <input
                 type="password"
                 value={password}
@@ -194,21 +175,27 @@ export const LoginPage: React.FC = () => {
         {/* Test Accounts */}
         <div className="mt-10 p-5 bg-white/5 border border-white/10 rounded-[24px]">
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" /> Test hisoblar (Parol: 123456)
+            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+            Test hisoblar (Parol: 123456)
           </p>
           <div className="space-y-3">
-            <button type="button" className="w-full flex items-center justify-between group cursor-pointer" onClick={() => { setLoginType('phone'); setPhone('+998901234567'); setPassword('123456'); }}>
-                <span className="text-xs font-bold text-slate-300 group-hover:text-white transition-colors">Distribyutor</span>
-                <span className="text-[10px] font-mono text-slate-500">+998901234567</span>
-            </button>
-            <button type="button" className="w-full flex items-center justify-between group cursor-pointer" onClick={() => { setLoginType('phone'); setPhone('+998901234500'); setPassword('123456'); }}>
-                <span className="text-xs font-bold text-slate-300 group-hover:text-white transition-colors">Do'kon egasi</span>
-                <span className="text-[10px] font-mono text-slate-500">+998901234500</span>
-            </button>
-            <button type="button" className="w-full flex items-center justify-between group cursor-pointer" onClick={() => { setLoginType('phone'); setPhone('+998900000000'); setPassword('123456'); }}>
-                <span className="text-xs font-bold text-slate-300 group-hover:text-white transition-colors">Admin</span>
-                <span className="text-[10px] font-mono text-slate-500">+998900000000</span>
-            </button>
+            {[
+              { label: 'Distribyutor', phone: '+998901234567' },
+              { label: "Do'kon egasi", phone: '+998901234500' },
+              { label: 'Admin',        phone: '+998900000000' },
+            ].map(({ label, phone: p }) => (
+              <button
+                key={p}
+                type="button"
+                className="w-full flex items-center justify-between group cursor-pointer"
+                onClick={() => { setLoginType('phone'); setPhone(p); setPassword('123456'); }}
+              >
+                <span className="text-xs font-bold text-slate-300 group-hover:text-white transition-colors">
+                  {label}
+                </span>
+                <span className="text-[10px] font-mono text-slate-500">{p}</span>
+              </button>
+            ))}
           </div>
         </div>
       </motion.div>

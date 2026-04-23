@@ -1,65 +1,135 @@
 import api from './api';
 
-export interface ProductsQuery {
-  search?: string;
-  category?: string;
-  minPrice?: number;
-  maxPrice?: number;
-  distributorId?: string;
-  minRating?: number;
-  inStock?: boolean;
-  sortBy?: 'price' | 'rating' | 'newest' | 'popular' | 'price_asc' | 'price_desc';
-  order?: 'asc' | 'desc';
-  page?: number;
-  limit?: number;
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export interface ProductVariant {
+  color?: string;
+  size?: string;
+  model?: string;
+  skuVariant?: string;
+  priceOverride?: number;
 }
 
-export const fetchProductsFn = async (params: ProductsQuery = {}) => {
-  const response = await api.get('/products', { params });
-  return response.data.data;
-};
+export interface ProductPayload {
+  name: string;
+  sku: string;
+  description?: string;
+  wholesalePrice: number;
+  retailPrice: number;
+  costPrice?: number;
+  unit?: string;
+  categoryId?: string;
+  brandId?: string;
+  status?: 'ACTIVE' | 'INACTIVE' | 'DRAFT';
+  discountType?: 'PERCENT' | 'FIXED';
+  discountValue?: number;
+  youtubeUrl?: string;
+  images?: string[];
+  variants?: ProductVariant[];
+}
 
-export const fetchCategoriesFn = async () => {
-  const response = await api.get('/products/categories');
-  return response.data.data;
-};
+export interface ProductsParams {
+  search?: string;
+  category?: string;
+  distributorId?: string;
+  page?: number;
+  limit?: number;
+  minPrice?: number;
+  maxPrice?: number;
+  stockStatus?: 'in_stock' | 'low_stock' | 'out_of_stock';
+  velocityStatus?: 'fast' | 'medium' | 'slow' | 'dead';
+  sortBy?: 'createdAt' | 'price' | 'stock' | 'sales';
+  sortOrder?: 'asc' | 'desc';
+}
 
-export const fetchStoreCatalogFn = async (params: ProductsQuery = {}) => {
-  const response = await api.get('/client/products', { params });
-  return response.data.data;
-};
+export interface ProductsPagination {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
 
-export const fetchProductByIdFn = async (id: string) => {
-  const response = await api.get(`/products/${id}`);
-  return response.data.data;
-};
+export interface ProductsResponse {
+  products: any[];
+  pagination: ProductsPagination;
+}
 
-// Distributor Only
-export const fetchDistributorProductsFn = async () => {
-  const response = await api.get('/distributor/products');
+// ─── API Functions ────────────────────────────────────────────────────────────
+
+// GET /api/products — barcha mahsulotlar (filter, sort, pagination)
+export const getProductsFn = async (params?: ProductsParams): Promise<ProductsResponse> => {
+  const response = await api.get('/api/products', { params });
   return response.data;
 };
 
-export const createProductFn = async (formData: FormData) => {
-  const response = await api.post('/distributor/products', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
+// POST /api/products?distributorId=xxx — yangi mahsulot qo'shish
+export const createProductFn = async ({
+  distributorId,
+  data,
+}: {
+  distributorId: string;
+  data: ProductPayload;
+}) => {
+  const response = await api.post('/api/products', data, {
+    params: { distributorId },
   });
   return response.data;
 };
 
-export const updateProductFn = async ({ id, formData }: { id: string; formData: FormData }) => {
-  const response = await api.put(`/distributor/products/${id}`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
+// GET /api/products/categories?distributorId=xxx — kategoriyalar
+export const getProductCategoriesFn = async (distributorId: string) => {
+  const response = await api.get('/api/products/categories', {
+    params: { distributorId },
   });
   return response.data;
 };
 
+// GET /api/products/:id — bitta mahsulot
+export const getProductByIdFn = async (id: string) => {
+  const response = await api.get(`/api/products/${id}`);
+  return response.data;
+};
+
+// PUT /api/products/:id — mahsulotni yangilash
+export const updateProductFn = async ({
+  id,
+  data,
+}: {
+  id: string;
+  data: Partial<ProductPayload>;
+}) => {
+  const response = await api.put(`/api/products/${id}`, data);
+  return response.data;
+};
+
+// DELETE /api/products/:id — mahsulotni o'chirish
 export const deleteProductFn = async (id: string) => {
-  const response = await api.delete(`/distributor/products/${id}`);
+  const response = await api.delete(`/api/products/${id}`);
   return response.data;
 };
 
-export const updateProductStockFn = async ({ id, stock }: { id: string; stock: number }) => {
-  const response = await api.patch(`/distributor/products/${id}/stock`, { stock });
+// GET /api/products/:id/analytics?period=xxx — mahsulot analitikasi
+export const getProductAnalyticsFn = async ({
+  id,
+  period,
+}: {
+  id: string;
+  period: string;
+}) => {
+  const response = await api.get(`/api/products/${id}/analytics`, {
+    params: { period },
+  });
+  return response.data;
+};
+
+// GET /api/products/:id/history — mahsulot tarixi
+export const getProductHistoryFn = async (id: string) => {
+  const response = await api.get(`/api/products/${id}/history`);
+  return response.data;
+};
+
+// POST /api/products/:id/calculate-velocity — tezlikni hisoblash
+export const calculateProductVelocityFn = async (id: string) => {
+  const response = await api.post(`/api/products/${id}/calculate-velocity`);
   return response.data;
 };

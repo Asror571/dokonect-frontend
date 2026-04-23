@@ -3,134 +3,77 @@ import { useQuery } from '@tanstack/react-query';
 import { Search, Filter, Download } from 'lucide-react';
 import { DataTable } from '../../components/ui/DataTable';
 import { StatusBadge } from '../../components/ui/StatusBadge';
-import { api } from '../../services/api';
 import { format } from 'date-fns';
+import { getAdminOrdersFn } from '../../api/admin.api';
+
+const STATUS_LIST = ['ALL','NEW','ACCEPTED','ASSIGNED','IN_TRANSIT','DELIVERED','CANCELLED','REJECTED'];
 
 export const OrdersPage: React.FC = () => {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery,  setSearchQuery]  = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
 
-  const { data: orders, isLoading } = useQuery({
+  const { data: ordersRes, isLoading } = useQuery({
     queryKey: ['admin-orders', statusFilter],
-    queryFn: async () => {
-      const params = statusFilter !== 'ALL' ? `?status=${statusFilter}` : '';
-      const response = await api.get(`/admin/orders${params}`);
-      return response.data;
-    },
+    queryFn: () => getAdminOrdersFn({ status: statusFilter !== 'ALL' ? statusFilter : undefined }),
   });
 
-  const columns = [
-    {
-      key: 'id',
-      label: 'Order ID',
-      sortable: true,
-      render: (order: any) => (
-        <span className="font-mono text-sm">{order.id.slice(0, 8)}</span>
-      ),
-    },
-    {
-      key: 'client',
-      label: 'Client',
-      render: (order: any) => order.client?.user?.name || 'N/A',
-    },
-    {
-      key: 'distributor',
-      label: 'Distributor',
-      render: (order: any) => order.distributor?.warehouseName || 'N/A',
-    },
-    {
-      key: 'driver',
-      label: 'Driver',
-      render: (order: any) => order.driver?.user?.name || 'Not assigned',
-    },
-    {
-      key: 'totalAmount',
-      label: 'Amount',
-      sortable: true,
-      render: (order: any) => `${order.totalAmount.toLocaleString()} UZS`,
-    },
-    {
-      key: 'status',
-      label: 'Status',
-      sortable: true,
-      render: (order: any) => <StatusBadge status={order.status} size="sm" />,
-    },
-    {
-      key: 'createdAt',
-      label: 'Date',
-      sortable: true,
-      render: (order: any) => format(new Date(order.createdAt), 'MMM dd, HH:mm'),
-    },
-  ];
+  const allOrders: any[] = ordersRes?.data?.orders || ordersRes?.orders || ordersRes?.data || [];
 
-  const filteredOrders = orders?.filter((order: any) =>
-    order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    order.client?.user?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+  const filtered = allOrders.filter((o: any) =>
+    o.id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    o.client?.user?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    o.client?.storeName?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const columns = [
+    { key: 'id',          label: 'Buyurtma ID', sortable: true, render: (o: any) => <span className="font-mono text-sm">#{o.id.slice(0,8)}</span> },
+    { key: 'client',      label: 'Mijoz',       render: (o: any) => o.client?.storeName || o.client?.user?.name || 'N/A' },
+    { key: 'distributor', label: 'Distribyutor',render: (o: any) => o.distributor?.companyName || 'N/A' },
+    { key: 'driver',      label: 'Haydovchi',   render: (o: any) => o.driver?.user?.name || 'Tayinlanmagan' },
+    { key: 'totalAmount', label: 'Summa',        sortable: true, render: (o: any) => `${(o.totalAmount||0).toLocaleString('uz-UZ')} UZS` },
+    { key: 'status',      label: 'Holat',        sortable: true, render: (o: any) => <StatusBadge status={o.status} size="sm" /> },
+    { key: 'createdAt',   label: 'Sana',         sortable: true, render: (o: any) => format(new Date(o.createdAt), 'MMM dd, HH:mm') },
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b border-gray-200 px-8 py-6">
-        <h1 className="text-3xl font-bold text-gray-900">Orders Management</h1>
-        <p className="text-gray-600 mt-1">View and manage all orders</p>
+        <h1 className="text-3xl font-bold text-gray-900">Buyurtmalar boshqaruvi</h1>
+        <p className="text-gray-600 mt-1">Barcha buyurtmalarni ko'rish va boshqarish</p>
       </div>
 
       <div className="p-8">
-        {/* Filters */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
           <div className="flex flex-col md:flex-row gap-4">
-            {/* Search */}
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search by order ID or client name..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
-                />
-              </div>
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Buyurtma ID yoki mijoz nomi..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+              />
             </div>
-
-            {/* Status Filter */}
             <div className="flex items-center gap-2">
               <Filter className="w-5 h-5 text-gray-400" />
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
-              >
-                <option value="ALL">All Status</option>
-                <option value="PENDING">Pending</option>
-                <option value="ACCEPTED">Accepted</option>
-                <option value="IN_TRANSIT">In Transit</option>
-                <option value="DELIVERED">Delivered</option>
-                <option value="CANCELLED">Cancelled</option>
+              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
+                {STATUS_LIST.map((s) => <option key={s} value={s}>{s === 'ALL' ? 'Barcha holatlar' : s}</option>)}
               </select>
             </div>
-
-            {/* Export */}
             <button className="flex items-center gap-2 px-4 py-2 bg-sky-500 text-white rounded-lg hover:bg-sky-600 transition-colors">
-              <Download className="w-5 h-5" />
-              Export CSV
+              <Download className="w-5 h-5" /> Eksport CSV
             </button>
           </div>
         </div>
 
-        {/* Orders Table */}
         {isLoading ? (
           <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-sky-500"></div>
-            <p className="text-gray-600 mt-2">Loading orders...</p>
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-sky-500" />
+            <p className="text-gray-600 mt-2">Yuklanmoqda...</p>
           </div>
         ) : (
-          <DataTable
-            data={filteredOrders || []}
-            columns={columns}
-            searchable={false}
-            onRowClick={(order) => console.log('Order clicked:', order)}
-          />
+          <DataTable data={filtered} columns={columns} searchable={false} onRowClick={(o) => console.log(o)} />
         )}
       </div>
     </div>

@@ -1,24 +1,29 @@
 import { useState } from 'react';
 import { MessageSquare, Loader2 } from 'lucide-react';
-import { useChatRooms } from '../../hooks/useChat';
+import { useQuery } from '@tanstack/react-query';
+import { getChatRoomsFn } from '../../api/chat.api';
 import { useSocket } from '../../hooks/useSocket';
 import ChatSidebar from '../../components/chat/ChatSidebar';
 import ChatWindow from '../../components/chat/ChatWindow';
 
 const StoreChatPage = () => {
   useSocket();
-  const { data: rooms = [], isLoading } = useChatRooms();
-  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
 
+  const { data: roomsRes, isLoading } = useQuery({
+    queryKey: ['chat-rooms'],
+    queryFn: getChatRoomsFn,
+    staleTime: 30_000,
+  });
+
+  const rooms: any[] = roomsRes?.data?.rooms || roomsRes?.rooms || roomsRes?.data || [];
+  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const selectedRoom = rooms.find((r) => r.id === selectedRoomId);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-7 h-7 animate-spin text-violet-600" />
-      </div>
-    );
-  }
+  if (isLoading) return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <Loader2 className="w-7 h-7 animate-spin text-violet-600" />
+    </div>
+  );
 
   return (
     <div className="page fade-in">

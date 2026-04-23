@@ -1,154 +1,296 @@
 import { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '../../services/api';
-import { Package, Warehouse, History, Search, Download } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Package, Warehouse, History, Search, Download, RefreshCw, AlertTriangle, Edit3, X } from 'lucide-react';
+import toast from 'react-hot-toast';
+
+import api from '../../api/api';
+import { getProductAlertsFn, checkProductAlertsFn, markAlertAsReadFn, updateProductVelocitiesFn } from '../../api/product-alerts.api';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
+import { getDistributorStockLogsFn, updateDistributorProductStockFn } from '../../api/ distributor.api';
 
 const InventoryPage = () => {
   const queryClient = useQueryClient();
-  const [searchTerm, setSearchTerm] = useState('');
-  
+  const [searchTerm,      setSearchTerm]      = useState('');
+  const [warehouseFilter, setWarehouseFilter] = useState('');
+  const [showLogs,        setShowLogs]        = useState(false);
+  const [editStock,       setEditStock]       = useState<{ productId: string; name: string; current: number } | null>(null);
+  const [stockInput,      setStockInput]      = useState('');
+  const [stockType,       setStockType]       = useState<'ADD' | 'SUBTRACT' | 'SET'>('ADD');
+
+  // ── Inventory ─────────────────────────────────────────────────────────────
   const { data: inventoryResponse, isLoading } = useQuery({
     queryKey: ['distributor-inventory'],
-    queryFn: async () => {
-      const response = await api.get('/distributor/inventory');
-      return response.data?.data?.inventory || [];
-    },
-    staleTime: 30000,
+    queryFn: () => api.get('/api/distributor/inventory').then(r => r.data?.data?.inventory || r.data?.inventory || []),
+    staleTime: 30_000,
   });
 
-  const inventory = inventoryResponse || [];
-  const filteredInventory = inventory.filter((inv: any) => 
-    inv.product?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    inv.product?.sku?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // ── Stock Logs ────────────────────────────────────────────────────────────
+  const { data: logsData } = useQuery({
+    queryKey: ['distributor-stock-logs'],
+    queryFn: getDistributorStockLogsFn,
+    enabled: showLogs,
+  });
+
+  // ── Alerts ────────────────────────────────────────────────────────────────
+  const { data: alertsData } = useQuery({
+    queryKey: ['product-alerts', 'unread'],
+    queryFn: () => getProductAlertsFn(false),
+    staleTime: 60_000,
+  });
+
+  // ── Mutations ─────────────────────────────────────────────────────────────
+  const { mutate: checkAlerts, isPending: isChecking } = useMutation({
+    mutationFn: checkProductAlertsFn,
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['product-alerts'] }); toast.success('Yangilandi'); },
+  });
+
+  const { mutate: markRead } = useMutation({
+    mutationFn: (id: string) => markAlertAsReadFn(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['product-alerts'] }),
+  });
+
+  const { mutate: updateVelocities, isPending: isUpdating } = useMutation({
+    mutationFn: updateProductVelocitiesFn,
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['distributor-inventory'] }); toast.success('Tezliklar yangilandi'); },
+    onError: () => toast.error('Xatolik'),
+  });
+
+  const { mutate: updateStock, isPending: isStockUpdating } = useMutation({
+    mutationFn: updateDistributorProductStockFn,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['distributor-inventory'] });
+      toast.success('Zaxira yangilandi');
+      setEditStock(null);
+      setStockInput('');
+    },
+    onError: (e: any) => toast.error(e.response?.data?.message || 'Xatolik'),
+  });
+
+  const inventory: any[] = inventoryResponse || [];
+  const alerts: any[]    = alertsData?.alerts || alertsData?.data?.alerts || [];
+  const logs: any[]      = logsData?.data?.logs || logsData?.logs || [];
+  const warehouses       = [...new Set(inventory.map((inv: any) => inv.warehouse?.name).filter(Boolean))];
+
+  const filteredInventory = inventory.filter((inv: any) => {
+    const q = searchTerm.toLowerCase();
+    const matchSearch = inv.product?.name?.toLowerCase().includes(q) || inv.product?.sku?.toLowerCase().includes(q);
+    const matchWh     = !warehouseFilter || inv.warehouse?.name === warehouseFilter;
+    return matchSearch && matchWh;
+  });
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-sky-500"></div>
-      </div>
-    );
+    return <div className="flex items-center justify-center min-h-[60vh]"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-sky-500" /></div>;
   }
 
   return (
     <div className="fade-in space-y-6 max-w-7xl mx-auto pb-12">
+
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 underline underline-offset-8 decoration-sky-500 decoration-2">Sklad va Inventar</h1>
           <p className="text-slate-500 text-sm mt-1">Mahsulotlar qoldig'i va omborlardagi zaxirani boshqaring.</p>
         </div>
-        
-        <div className="flex gap-2">
-          <Button variant="secondary" className="gap-2 px-4 py-2 text-sm bg-sky-50 text-sky-600 border-sky-100 hover:bg-sky-100 transition-all font-medium">
-            <Download className="w-4 h-4" /> Eksport (Excel)
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" className="gap-2 px-4 py-2 text-sm" onClick={() => checkAlerts()} disabled={isChecking}>
+            <RefreshCw className={`w-4 h-4 ${isChecking ? 'animate-spin' : ''}`} /> Tekshirish
           </Button>
-          <Button variant="secondary" className="gap-2 px-4 py-2 text-sm bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all font-medium">
-            <History className="w-4 h-4" /> Tarix (History)
+          <Button variant="secondary" className="gap-2 px-4 py-2 text-sm bg-violet-50 text-violet-600 border-violet-100 hover:bg-violet-100" onClick={() => updateVelocities()} disabled={isUpdating}>
+            <RefreshCw className={`w-4 h-4 ${isUpdating ? 'animate-spin' : ''}`} /> Tezlikni yangilash
+          </Button>
+          <Button variant="secondary" className="gap-2 px-4 py-2 text-sm bg-sky-50 text-sky-600 border-sky-100 hover:bg-sky-100">
+            <Download className="w-4 h-4" /> Eksport
+          </Button>
+          <Button variant="secondary" className="gap-2 px-4 py-2 text-sm" onClick={() => setShowLogs(!showLogs)}>
+            <History className="w-4 h-4" /> {showLogs ? "Jadvalni ko'rish" : 'Tarix'}
           </Button>
         </div>
       </div>
 
+      {/* Alerts */}
+      {alerts.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-2">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertTriangle className="w-5 h-5 text-amber-500" />
+            <h3 className="font-semibold text-amber-800">{alerts.length} ta ogohlantirish</h3>
+          </div>
+          {alerts.map((alert: any) => (
+            <div key={alert.id} className="flex items-center justify-between bg-white/80 rounded-xl px-4 py-2.5">
+              <div>
+                <p className="text-sm font-medium text-slate-800">{alert.message}</p>
+                {alert.product && <p className="text-xs text-slate-500">{alert.product.name} — {alert.product.sku}</p>}
+              </div>
+              <button onClick={() => markRead(alert.id)} className="text-xs text-amber-600 hover:text-amber-800 font-semibold ml-4 shrink-0">O'qildi ✓</button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Jami mahsulotlar</p>
-          <p className="text-2xl font-bold text-slate-900">{inventory.length}</p>
-        </div>
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm border-l-4 border-l-red-400">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Kam qolganlar (Critical)</p>
-          <p className="text-2xl font-bold text-red-500">
-            {inventory.filter((inv: any) => inv.isLowStock).length}
-          </p>
-        </div>
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm border-l-4 border-l-amber-400">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Band qilingan (Reserved)</p>
-          <p className="text-2xl font-bold text-amber-500 uppercase tracking-tighter">
-            {inventory.reduce((acc: number, inv: any) => acc + inv.reserved, 0)} <span className="text-xs text-slate-400">dona</span>
-          </p>
-        </div>
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm border-l-4 border-l-sky-400">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Omborlar soni</p>
-          <p className="text-2xl font-bold text-sky-500">
-            {[...new Set(inventory.map((inv: any) => inv.warehouseId))].length}
-          </p>
-        </div>
+        {[
+          { label: 'Jami mahsulotlar',  value: inventory.length, border: '' },
+          { label: 'Kam qolganlar',     value: inventory.filter((i: any) => (i.available ?? i.quantity - i.reserved) <= (i.minThreshold ?? 5)).length, border: 'border-l-4 border-l-red-400',   valueClass: 'text-red-500' },
+          { label: 'Band qilingan',     value: inventory.reduce((a: number, i: any) => a + (i.reserved || 0), 0), border: 'border-l-4 border-l-amber-400', valueClass: 'text-amber-500' },
+          { label: 'Omborlar',          value: warehouses.length || 1, border: 'border-l-4 border-l-sky-400', valueClass: 'text-sky-500' },
+        ].map((s) => (
+          <div key={s.label} className={`bg-white p-5 rounded-2xl border border-slate-200 shadow-sm ${s.border}`}>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">{s.label}</p>
+            <p className={`text-2xl font-bold ${(s as any).valueClass || 'text-slate-900'}`}>{s.value}</p>
+          </div>
+        ))}
       </div>
 
+      {/* Stock Logs Modal */}
+      {showLogs && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+          <h3 className="font-semibold text-slate-900 mb-4">Zaxira tarixi</h3>
+          {logs.length === 0 ? (
+            <p className="text-slate-400 text-sm text-center py-6">Tarix bo'sh</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-slate-50 text-[11px] uppercase tracking-widest text-slate-500">
+                  <tr>
+                    <th className="px-4 py-3">Mahsulot</th>
+                    <th className="px-4 py-3">Tur</th>
+                    <th className="px-4 py-3">Miqdor</th>
+                    <th className="px-4 py-3">Sana</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {logs.slice(0, 20).map((log: any) => (
+                    <tr key={log.id} className="hover:bg-slate-50">
+                      <td className="px-4 py-3 font-medium text-slate-800">{log.product?.name || '—'}</td>
+                      <td className="px-4 py-3"><Badge variant={log.type === 'ADD' ? 'success' : 'danger'}>{log.type}</Badge></td>
+                      <td className="px-4 py-3 font-bold">{log.quantity}</td>
+                      <td className="px-4 py-3 text-slate-400 text-xs">{log.createdAt ? new Date(log.createdAt).toLocaleString() : '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Stock Update Modal */}
+      {editStock && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-slate-900">Zaxira yangilash</h3>
+              <button onClick={() => setEditStock(null)}><X className="w-5 h-5 text-slate-400" /></button>
+            </div>
+            <p className="text-sm text-slate-600 mb-4">{editStock.name} — Hozir: <strong>{editStock.current}</strong></p>
+            <div className="space-y-3">
+              <div className="grid grid-cols-3 gap-2">
+                {(['ADD', 'SUBTRACT', 'SET'] as const).map((t) => (
+                  <button key={t} onClick={() => setStockType(t)} className={`py-2 rounded-xl text-xs font-semibold border transition ${stockType === t ? 'border-sky-500 bg-sky-50 text-sky-700' : 'border-slate-200 text-slate-600'}`}>{t === 'ADD' ? "Qo'shish" : t === 'SUBTRACT' ? "Ayirish" : "Belgilash"}</button>
+                ))}
+              </div>
+              <input
+                type="number"
+                min="0"
+                placeholder="Miqdor"
+                value={stockInput}
+                onChange={(e) => setStockInput(e.target.value)}
+                className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+              />
+              <Button
+                className="w-full"
+                isLoading={isStockUpdating}
+                onClick={() => {
+                  if (!stockInput) return toast.error('Miqdor kiriting');
+                  updateStock({ productId: editStock.productId, data: { quantity: Number(stockInput), type: stockType } });
+                }}
+              >
+                Saqlash
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Table */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="p-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input 
-              type="text" 
-              placeholder="Mahsulot yoki SKU orqali qidirish..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all bg-slate-50 focus:bg-white"
-            />
+            <input type="text" placeholder="Mahsulot yoki SKU..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 bg-slate-50 focus:bg-white transition-all" />
           </div>
-          <div className="flex gap-2">
-            <select className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-500">
-              <option value="">Barcha omborlar</option>
-              {[...new Set(inventory.map((inv: any) => inv.warehouse?.name))].map((w: any) => (
-                <option key={w} value={w}>{w}</option>
-              ))}
-            </select>
-          </div>
+          <select value={warehouseFilter} onChange={(e) => setWarehouseFilter(e.target.value)} className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-500">
+            <option value="">Barcha omborlar</option>
+            {warehouses.map((w: any) => <option key={w} value={w}>{w}</option>)}
+          </select>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-slate-50 text-slate-500 text-[11px] uppercase tracking-widest font-bold">
               <tr>
-                <th className="px-6 py-4">Mahsulot</th>
-                <th className="px-6 py-4">Sklad / Ombor</th>
-                <th className="px-6 py-4">Jami (Total)</th>
-                <th className="px-6 py-4">Band (Blocked)</th>
-                <th className="px-6 py-4">Sotuvda (Available)</th>
-                <th className="px-6 py-4">Holati</th>
+                {['Mahsulot', 'Ombor', 'Jami', 'Band', 'Mavjud', 'Tezlik', 'Holati', ''].map((h) => (
+                  <th key={h} className="px-6 py-4">{h}</th>
+                ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-sm">
-              {filteredInventory.map((inv: any) => (
-                <tr key={inv.id} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 overflow-hidden shrink-0">
-                        {inv.product?.images?.[0]?.url ? (
-                          <img src={inv.product.images[0].url} alt={inv.product.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <Package className="w-5 h-5" />
-                        )}
+              {filteredInventory.map((inv: any) => {
+                const available = inv.available ?? (inv.quantity - inv.reserved);
+                const isLow     = available <= (inv.minThreshold ?? 5);
+                const photoUrl  = inv.product?.images?.[0]?.url;
+                return (
+                  <tr key={inv.id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 overflow-hidden shrink-0">
+                          {photoUrl ? <img src={photoUrl} alt={inv.product?.name} className="w-full h-full object-cover" /> : <Package className="w-5 h-5" />}
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-900">{inv.product?.name}</p>
+                          <p className="text-[10px] text-slate-400 font-mono mt-0.5">{inv.product?.sku}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-bold text-slate-900 group-hover:text-sky-600 transition-colors">{inv.product?.name}</p>
-                        <p className="text-[10px] text-slate-400 font-mono mt-0.5 tracking-tighter">{inv.product?.sku}</p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2 text-slate-600">
+                        <Warehouse className="w-4 h-4 text-slate-300" />
+                        <span className="font-semibold text-xs uppercase tracking-tighter">{inv.warehouse?.name || 'Asosiy ombor'}</span>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2 text-slate-600">
-                      <Warehouse className="w-4 h-4 text-slate-300" />
-                      <span className="font-semibold text-xs tracking-tighter uppercase">{inv.warehouse?.name || 'Asosiy ombor'}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 font-bold text-slate-700">{inv.quantity}</td>
-                  <td className="px-6 py-4 text-amber-500 font-bold">{inv.reserved}</td>
-                  <td className={`px-6 py-4 font-bold ${inv.available <= inv.minThreshold ? 'text-red-500 animate-pulse' : 'text-emerald-600'}`}>
-                    {inv.available}
-                  </td>
-                  <td className="px-6 py-4">
-                    <Badge variant={inv.available <= inv.minThreshold ? 'danger' : 'success'}>
-                      {inv.available <= inv.minThreshold ? 'Kam qolgan' : 'Zaxira bor'}
-                    </Badge>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-6 py-4 font-bold text-slate-700">{inv.quantity ?? '—'}</td>
+                    <td className="px-6 py-4 font-bold text-amber-500">{inv.reserved ?? 0}</td>
+                    <td className={`px-6 py-4 font-bold ${isLow ? 'text-red-500' : 'text-emerald-600'}`}>{available}</td>
+                    <td className="px-6 py-4">
+                      {inv.product?.velocityStatus ? (
+                        <span className={`text-xs font-bold px-2 py-1 rounded-lg ${
+                          inv.product.velocityStatus === 'fast'   ? 'bg-green-100 text-green-700' :
+                          inv.product.velocityStatus === 'medium' ? 'bg-blue-100 text-blue-700'   :
+                          inv.product.velocityStatus === 'slow'   ? 'bg-amber-100 text-amber-700' :
+                                                                    'bg-red-100 text-red-700'
+                        }`}>
+                          {inv.product.velocityStatus === 'fast' ? '🚀 Tez' : inv.product.velocityStatus === 'medium' ? "📦 O'rta" : inv.product.velocityStatus === 'slow' ? '🐢 Sekin' : '💀 Harakatsiz'}
+                        </span>
+                      ) : <span className="text-xs text-slate-400">—</span>}
+                    </td>
+                    <td className="px-6 py-4">
+                      <Badge variant={isLow ? 'danger' : 'success'}>{isLow ? 'Kam qolgan' : 'Zaxira bor'}</Badge>
+                    </td>
+                    <td className="px-6 py-4">
+                      <button
+                        onClick={() => { setEditStock({ productId: inv.product?.id || inv.productId, name: inv.product?.name || '—', current: available }); setStockInput(''); setStockType('ADD'); }}
+                        className="p-1.5 bg-slate-50 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors text-slate-400"
+                        title="Zaxirani o'zgartirish"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
               {filteredInventory.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-slate-400">Inventar topilmadi</td>
-                </tr>
+                <tr><td colSpan={8} className="px-6 py-12 text-center text-slate-400">Inventar topilmadi</td></tr>
               )}
             </tbody>
           </table>

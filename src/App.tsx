@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import AppLayout from './components/layout/AppLayout';
+import { useAuthStore } from './store/authStore';
 
 // Auth Pages
 import { LoginPage } from './pages/auth/LoginPage';
@@ -26,16 +27,49 @@ import CatalogPage from './pages/store/CatalogPage';
 import DistributorsPage from './pages/store/DistributorsPage';
 import FinancePage from './pages/store/FinancePage';
 
-// 🔐 Protected Route — vaqtinchalik o'chirilgan
-const ProtectedRoute = ({ children }: { children: React.ReactNode; roles?: string[] }) => {
+// ─── ProtectedRoute ───────────────────────────────────────────────────────────
+const ProtectedRoute = ({
+  children,
+  roles,
+}: {
+  children: React.ReactNode;
+  roles?: string[];
+}) => {
+  const { isAuthenticated, user } = useAuthStore();
+
+  // Token va user yo'q → login sahifasiga
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Role tekshiruvi
+  if (roles && user?.role && !roles.includes(user.role)) {
+    // Role mos kelmasa — o'z dashboardiga yo'naltirish
+    if (user.role === 'DISTRIBUTOR') return <Navigate to="/distributor/dashboard" replace />;
+    if (user.role === 'CLIENT')      return <Navigate to="/store/dashboard" replace />;
+    if (user.role === 'DRIVER')      return <Navigate to="/driver/dashboard" replace />;
+    if (user.role === 'ADMIN')       return <Navigate to="/admin/dashboard" replace />;
+    return <Navigate to="/" replace />;
+  }
+
   return <>{children}</>;
 };
 
-// 🔥 HOME — to'g'ridan distributor dashboardga
+// ─── HomeRedirect — rolga qarab yo'naltirish ──────────────────────────────────
 const HomeRedirect = () => {
-  return <Navigate to="/distributor/dashboard" replace />;
+  const { isAuthenticated, user } = useAuthStore();
+
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+
+  if (user?.role === 'DISTRIBUTOR') return <Navigate to="/distributor/dashboard" replace />;
+  if (user?.role === 'CLIENT')      return <Navigate to="/store/dashboard" replace />;
+  if (user?.role === 'DRIVER')      return <Navigate to="/driver/dashboard" replace />;
+  if (user?.role === 'ADMIN')       return <Navigate to="/admin/dashboard" replace />;
+
+  return <Navigate to="/login" replace />;
 };
 
+// ─── App ──────────────────────────────────────────────────────────────────────
 function App() {
   return (
     <Router>
@@ -43,8 +77,8 @@ function App() {
 
       <Routes>
 
-        {/* PUBLIC */}
-        <Route path="/login" element={<LoginPage />} />
+        {/* PUBLIC — token kerak emas */}
+        <Route path="/login"    element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
 
         {/* APP LAYOUT WRAPPER */}
@@ -53,25 +87,25 @@ function App() {
           {/* HOME */}
           <Route path="/" element={<HomeRedirect />} />
 
-          {/* DISTRIBUTOR */}
-          <Route path="/distributor/dashboard" element={<ProtectedRoute><DistributorDashboard /></ProtectedRoute>} />
-          <Route path="/distributor/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
-          <Route path="/distributor/orders/:id" element={<ProtectedRoute><OrderDetailPage /></ProtectedRoute>} />
-          <Route path="/distributor/products" element={<ProtectedRoute><ProductsPage /></ProtectedRoute>} />
-          <Route path="/distributor/products/add" element={<ProtectedRoute><AddProductPage /></ProtectedRoute>} />
-          <Route path="/distributor/drivers" element={<ProtectedRoute><DriversPage /></ProtectedRoute>} />
-          <Route path="/distributor/inventory" element={<ProtectedRoute><InventoryPage /></ProtectedRoute>} />
-          <Route path="/distributor/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
-          <Route path="/distributor/pricing" element={<ProtectedRoute><PricingPage /></ProtectedRoute>} />
-          <Route path="/distributor/chat" element={<ProtectedRoute><DistributorChatPage /></ProtectedRoute>} />
-          <Route path="/distributor/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+          {/* ── DISTRIBUTOR ── */}
+          <Route path="/distributor/dashboard" element={<ProtectedRoute roles={['DISTRIBUTOR', 'ADMIN']}><DistributorDashboard /></ProtectedRoute>} />
+          <Route path="/distributor/orders"    element={<ProtectedRoute roles={['DISTRIBUTOR', 'ADMIN']}><OrdersPage /></ProtectedRoute>} />
+          <Route path="/distributor/orders/:id" element={<ProtectedRoute roles={['DISTRIBUTOR', 'ADMIN']}><OrderDetailPage /></ProtectedRoute>} />
+          <Route path="/distributor/products"  element={<ProtectedRoute roles={['DISTRIBUTOR', 'ADMIN']}><ProductsPage /></ProtectedRoute>} />
+          <Route path="/distributor/products/add" element={<ProtectedRoute roles={['DISTRIBUTOR', 'ADMIN']}><AddProductPage /></ProtectedRoute>} />
+          <Route path="/distributor/drivers"   element={<ProtectedRoute roles={['DISTRIBUTOR', 'ADMIN']}><DriversPage /></ProtectedRoute>} />
+          <Route path="/distributor/inventory" element={<ProtectedRoute roles={['DISTRIBUTOR', 'ADMIN']}><InventoryPage /></ProtectedRoute>} />
+          <Route path="/distributor/analytics" element={<ProtectedRoute roles={['DISTRIBUTOR', 'ADMIN']}><AnalyticsPage /></ProtectedRoute>} />
+          <Route path="/distributor/pricing"   element={<ProtectedRoute roles={['DISTRIBUTOR', 'ADMIN']}><PricingPage /></ProtectedRoute>} />
+          <Route path="/distributor/chat"      element={<ProtectedRoute roles={['DISTRIBUTOR', 'ADMIN']}><DistributorChatPage /></ProtectedRoute>} />
+          <Route path="/distributor/settings"  element={<ProtectedRoute roles={['DISTRIBUTOR', 'ADMIN']}><SettingsPage /></ProtectedRoute>} />
 
-          {/* STORE */}
-          <Route path="/store/dashboard" element={<ProtectedRoute><StoreDashboard /></ProtectedRoute>} />
-          <Route path="/store/orders" element={<ProtectedRoute><StoreOrdersPage /></ProtectedRoute>} />
-          <Route path="/store/catalog" element={<ProtectedRoute><CatalogPage /></ProtectedRoute>} />
-          <Route path="/store/distributors" element={<ProtectedRoute><DistributorsPage /></ProtectedRoute>} />
-          <Route path="/store/finance" element={<ProtectedRoute><FinancePage /></ProtectedRoute>} />
+          {/* ── STORE / CLIENT ── */}
+          <Route path="/store/dashboard"    element={<ProtectedRoute roles={['CLIENT', 'STORE', 'ADMIN']}><StoreDashboard /></ProtectedRoute>} />
+          <Route path="/store/orders"       element={<ProtectedRoute roles={['CLIENT', 'STORE', 'ADMIN']}><StoreOrdersPage /></ProtectedRoute>} />
+          <Route path="/store/catalog"      element={<ProtectedRoute roles={['CLIENT', 'STORE', 'ADMIN']}><CatalogPage /></ProtectedRoute>} />
+          <Route path="/store/distributors" element={<ProtectedRoute roles={['CLIENT', 'STORE', 'ADMIN']}><DistributorsPage /></ProtectedRoute>} />
+          <Route path="/store/finance"      element={<ProtectedRoute roles={['CLIENT', 'STORE', 'ADMIN']}><FinancePage /></ProtectedRoute>} />
 
         </Route>
 

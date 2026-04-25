@@ -1,11 +1,12 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
-import { Mail, Lock, Store, Briefcase, User, Phone, MapPin, ArrowRight, Zap } from 'lucide-react';
+import { Mail, Lock, Store, Briefcase, User, Phone, MapPin, ArrowRight, Zap, Eye, EyeOff } from 'lucide-react';
 import { registerFn } from '../../api/auth.api';
-import { useAuthStore } from '../../store/authStore';   // ← authStore (LoginPage bilan bir xil)
+import { useAuthStore } from '../../store/authStore';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { cn } from '../../components/ui/Button';
@@ -15,7 +16,7 @@ const registerSchema = z.object({
   name:     z.string().min(2, 'Kamida 2 belgi'),
   email:    z.string().email("Noto'g'ri email"),
   password: z.string().min(6, 'Kamida 6 belgi'),
-  role:     z.enum(['STORE', 'DISTRIBUTOR']),   // ← STORE_OWNER → STORE (API talabi)
+  role:     z.enum(['STORE', 'DISTRIBUTOR']),
   address:  z.string().min(5, 'Manzilni kiriting'),
   phone:    z.string().min(7, 'Telefon raqam kiriting'),
 });
@@ -23,7 +24,8 @@ type RegisterForm = z.infer<typeof registerSchema>;
 
 const RegisterPage = () => {
   const navigate = useNavigate();
-  const { setAuth } = useAuthStore();   // ← destructure qilindi
+  const { setAuth } = useAuthStore();
+  const [showPassword, setShowPassword] = useState(false);
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
@@ -35,38 +37,23 @@ const RegisterPage = () => {
   const { mutate, isPending } = useMutation({
     mutationFn: registerFn,
     onSuccess: (data) => {
-      // API response: { success, data: { user, accessToken, refreshToken } }
-      // yoki flat: { success, data: { id, name, role, accessToken, ... } }
-      const user    = data.data?.user    ?? data.data;
-      const accTok  = data.data?.accessToken  ?? data.data?.token  ?? '';
-      const refTok  = data.data?.refreshToken ?? '';
+      const user   = data.data?.user   ?? data.data;
+      const accTok = data.data?.accessToken ?? data.data?.token ?? '';
+      const refTok = data.data?.refreshToken ?? '';
 
       setAuth(
-        {
-          id:    user.id,
-          name:  user.name,
-          email: user.email  ?? '',
-          phone: user.phone  ?? '',
-          role:  user.role,
-        },
+        { id: user.id, name: user.name, email: user.email ?? '', phone: user.phone ?? '', role: user.role },
         accTok,
         refTok,
       );
 
       toast.success("Muvaffaqiyatli ro'yxatdan o'tdingiz!");
 
-      // Role ga qarab yo'naltirish
-      if (user.role === 'STORE') {
-        navigate('/store/dashboard');
-      } else if (user.role === 'DISTRIBUTOR') {
-        navigate('/distributor/dashboard');
-      } else if (user.role === 'DRIVER') {
-        navigate('/driver/dashboard');
-      } else if (user.role === 'ADMIN') {
-        navigate('/admin/dashboard');
-      } else {
-        navigate('/');
-      }
+      if (user.role === 'STORE')       navigate('/store/dashboard');
+      else if (user.role === 'DISTRIBUTOR') navigate('/distributor/dashboard');
+      else if (user.role === 'DRIVER') navigate('/driver/dashboard');
+      else if (user.role === 'ADMIN')  navigate('/admin/dashboard');
+      else                             navigate('/');
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Xatolik yuz berdi');
@@ -75,7 +62,8 @@ const RegisterPage = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4 py-10">
-      <div className="w-full max-w-lg fade-up">
+      <div className="w-full max-w-lg">
+
         {/* Logo */}
         <div className="flex items-center justify-center gap-2 mb-8">
           <div className="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center shadow-lg shadow-violet-500/30">
@@ -93,32 +81,25 @@ const RegisterPage = () => {
           </div>
 
           <form onSubmit={handleSubmit((d) => mutate(d))} className="space-y-4">
+
             {/* Role selector */}
             <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-                Rolingiz
-              </label>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Rolingiz</label>
               <div className="grid grid-cols-2 gap-3">
                 {[
                   { value: 'DISTRIBUTOR', icon: Briefcase, label: 'Distribyutor' },
-                  { value: 'STORE',       icon: Store,     label: "Do'kon egasi" }, // ← STORE
+                  { value: 'STORE',       icon: Store,     label: "Do'kon egasi" },
                 ].map(({ value, icon: Icon, label }) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setValue('role', value as any)}
+                  <button key={value} type="button" onClick={() => setValue('role', value as any)}
                     className={cn(
                       'flex items-center gap-3 p-3.5 rounded-xl border text-sm font-medium transition-all',
                       selectedRole === value
                         ? 'border-violet-500 bg-violet-50 text-violet-700 shadow-sm'
                         : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50'
-                    )}
-                  >
+                    )}>
                     <div className={cn(
                       'w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
-                      selectedRole === value
-                        ? 'bg-violet-600 text-white'
-                        : 'bg-slate-100 text-slate-500'
+                      selectedRole === value ? 'bg-violet-600 text-white' : 'bg-slate-100 text-slate-500'
                     )}>
                       <Icon className="w-4 h-4" />
                     </div>
@@ -160,14 +141,34 @@ const RegisterPage = () => {
               />
             </div>
 
-            <Input
-              label="Parol"
-              type="password"
-              placeholder="••••••••"
-              leftIcon={<Lock className="w-4 h-4" />}
-              error={errors.password?.message}
-              {...register('password')}
-            />
+            {/* Parol — ko'rish tugmasi bilan */}
+            <div className="space-y-1.5">
+              <label className="block text-sm font-semibold text-slate-700">Parol</label>
+              <div className="relative">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                  <Lock className="w-4 h-4" />
+                </div>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  {...register('password')}
+                  className={cn(
+                    'w-full pl-9 pr-10 py-2.5 bg-slate-50 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all',
+                    errors.password ? 'border-red-400' : 'border-slate-200'
+                  )}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="text-xs text-red-500 mt-1">{errors.password.message}</p>
+              )}
+            </div>
 
             <Button type="submit" isLoading={isPending} className="w-full" size="lg">
               {!isPending && <>Ro'yxatdan o'tish <ArrowRight className="w-4 h-4 ml-1.5" /></>}

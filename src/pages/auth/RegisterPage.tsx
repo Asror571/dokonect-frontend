@@ -37,9 +37,14 @@ const RegisterPage = () => {
   const { mutate, isPending } = useMutation({
     mutationFn: registerFn,
     onSuccess: (data) => {
+      console.log('✅ Register response:', data);
+
       const user   = data.data?.user   ?? data.data;
       const accTok = data.data?.accessToken ?? data.data?.token ?? '';
       const refTok = data.data?.refreshToken ?? '';
+
+      console.log('👤 User:', user);
+      console.log('🔑 Token:', accTok);
 
       setAuth(
         { id: user.id, name: user.name, email: user.email ?? '', phone: user.phone ?? '', role: user.role },
@@ -49,13 +54,15 @@ const RegisterPage = () => {
 
       toast.success("Muvaffaqiyatli ro'yxatdan o'tdingiz!");
 
-      if (user.role === 'STORE')       navigate('/store/dashboard');
+      if (user.role === 'STORE')            navigate('/store/dashboard');
       else if (user.role === 'DISTRIBUTOR') navigate('/distributor/dashboard');
-      else if (user.role === 'DRIVER') navigate('/driver/dashboard');
-      else if (user.role === 'ADMIN')  navigate('/admin/dashboard');
-      else                             navigate('/');
+      else if (user.role === 'DRIVER')      navigate('/driver/dashboard');
+      else if (user.role === 'ADMIN')       navigate('/admin/dashboard');
+      else                                  navigate('/');
     },
     onError: (error: any) => {
+      console.log('❌ Error:', error);
+      console.log('❌ Error response:', error.response?.data);
       toast.error(error.response?.data?.message || 'Xatolik yuz berdi');
     },
   });

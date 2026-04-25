@@ -21,13 +21,12 @@ interface AuthState {
   refreshToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  
-  // Actions
+
   setAuth: (user: User, accessToken: string, refreshToken: string) => void;
   setUser: (user: User) => void;
   updateToken: (accessToken: string) => void;
   clearAuth: () => void;
-  logout: () => void; // alias
+  logout: () => void;
   setLoading: (loading: boolean) => void;
 }
 
@@ -41,38 +40,40 @@ export const useAuthStore = create<AuthState>()(
       isLoading: false,
 
       setAuth: (user, accessToken, refreshToken) => {
-        console.log('🔄 setAuth called:', { user: user.name, role: user.role });
-        
-        // Save tokens to localStorage for axios interceptor
-        localStorage.setItem('accessToken', accessToken);
+        // distributorId / clientId / driverId — response ichida turli joylarda kelishi mumkin
+        // Shuning uchun hamma variantni tekshiramiz
+        const enrichedUser: User = {
+          ...user,
+          distributorId: user.distributorId ?? (user as any).distributor?.id ?? undefined,
+          clientId:      user.clientId      ?? (user as any).client?.id      ?? undefined,
+          driverId:      user.driverId      ?? (user as any).driver?.id      ?? undefined,
+        };
+
+        localStorage.setItem('accessToken',  accessToken);
         localStorage.setItem('refreshToken', refreshToken);
-        localStorage.setItem('user', JSON.stringify(user));
-        
+        localStorage.setItem('user',         JSON.stringify(enrichedUser));
+
         set({
-          user,
+          user: enrichedUser,
           accessToken,
           refreshToken,
           isAuthenticated: true,
           isLoading: false,
         });
-        
-        console.log('✅ setAuth completed, isAuthenticated:', true);
       },
 
-      setUser: (user) =>
-        set({ user }),
+      setUser: (user) => {
+        localStorage.setItem('user', JSON.stringify(user));
+        set({ user });
+      },
 
       updateToken: (accessToken) => {
-        // Update token in localStorage for axios interceptor
         localStorage.setItem('accessToken', accessToken);
-        
         set({ accessToken });
       },
 
       clearAuth: () => {
-        // Clear all localStorage
         localStorage.clear();
-        
         set({
           user: null,
           accessToken: null,
@@ -83,9 +84,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
-        // Clear all localStorage
         localStorage.clear();
-        
         set({
           user: null,
           accessToken: null,
@@ -95,15 +94,14 @@ export const useAuthStore = create<AuthState>()(
         });
       },
 
-      setLoading: (loading) =>
-        set({ isLoading: loading }),
+      setLoading: (loading) => set({ isLoading: loading }),
     }),
     {
       name: 'auth-storage',
       partialize: (state) => ({
-        user: state.user,
-        accessToken: state.accessToken,
-        refreshToken: state.refreshToken,
+        user:            state.user,
+        accessToken:     state.accessToken,
+        refreshToken:    state.refreshToken,
         isAuthenticated: state.isAuthenticated,
       }),
     }

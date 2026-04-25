@@ -4,12 +4,13 @@ import {
   BarChart3, MessageSquare, Truck,
   Zap, Warehouse, Tag, Settings
 } from 'lucide-react';
+import { useAuthStore } from '../../store/authStore';
 
 const menuItems = [
   { to: '/distributor/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/distributor/orders',    icon: ClipboardList,   label: 'Buyurtmalar' },
   { to: '/distributor/products',  icon: Package,         label: 'Mahsulotlar' },
-  { to: '/distributor/inventory', icon: Warehouse,       label: 'Inventar',    badgeColor: 'bg-red-500' },
+  { to: '/distributor/inventory', icon: Warehouse,       label: 'Inventar' },
   { to: '/distributor/drivers',   icon: Truck,           label: 'Haydovchilar' },
   { to: '/distributor/analytics', icon: BarChart3,       label: 'Analytics' },
   { to: '/distributor/pricing',   icon: Tag,             label: 'Narxlash' },
@@ -19,6 +20,12 @@ const menuItems = [
 
 const Sidebar = () => {
   const navigate = useNavigate();
+  const { logout } = useAuthStore();
+
+  const handleLogout = () => {
+    logout();                  // zustand state + localStorage.clear()
+    navigate('/login', { replace: true });
+  };
 
   return (
     <aside className="w-64 bg-slate-900 flex flex-col h-full fixed left-0 top-0 z-50 shadow-2xl">
@@ -61,7 +68,7 @@ const Sidebar = () => {
       {/* Logout */}
       <div className="p-4 border-t border-white/5 bg-slate-950/30">
         <button
-          onClick={() => navigate('/login')}
+          onClick={handleLogout}
           className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-bold text-slate-500 hover:text-red-400 hover:bg-red-400/10 transition-all active:scale-95 group"
         >
           <LogOut className="w-5 h-5 shrink-0 group-hover:-translate-x-1 transition-transform" />

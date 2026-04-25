@@ -39,26 +39,41 @@ const RegisterPage = () => {
     onSuccess: (data) => {
       console.log('✅ Register response:', data);
 
-      const user   = data.data?.user   ?? data.data;
-      const accTok = data.data?.accessToken ?? data.data?.token ?? '';
-      const refTok = data.data?.refreshToken ?? '';
+      // API: { user, token } yoki { data: { user, token } } yoki { data: { user, accessToken } }
+      const user   = data.user   ?? data.data?.user   ?? data.data;
+      const accTok = data.token  ?? data.accessToken  ?? data.data?.token ?? data.data?.accessToken ?? '';
+      const refTok = data.refreshToken ?? data.data?.refreshToken ?? '';
 
       console.log('👤 User:', user);
       console.log('🔑 Token:', accTok);
 
+      if (!user?.id) {
+        toast.error('Foydalanuvchi ma\'lumotlari topilmadi');
+        return;
+      }
+
       setAuth(
-        { id: user.id, name: user.name, email: user.email ?? '', phone: user.phone ?? '', role: user.role },
+        {
+          id:            user.id,
+          name:          user.name,
+          email:         user.email         ?? '',
+          phone:         user.phone         ?? '',
+          role:          user.role,
+          distributorId: user.distributorId ?? user.distributor?.id ?? undefined,
+          clientId:      user.clientId      ?? user.client?.id      ?? undefined,
+          driverId:      user.driverId      ?? user.driver?.id      ?? undefined,
+        },
         accTok,
         refTok,
       );
 
       toast.success("Muvaffaqiyatli ro'yxatdan o'tdingiz!");
 
-      if (user.role === 'STORE')            navigate('/store/dashboard');
-      else if (user.role === 'DISTRIBUTOR') navigate('/distributor/dashboard');
-      else if (user.role === 'DRIVER')      navigate('/driver/dashboard');
-      else if (user.role === 'ADMIN')       navigate('/admin/dashboard');
-      else                                  navigate('/');
+      if (user.role === 'STORE')            navigate('/store/dashboard',       { replace: true });
+      else if (user.role === 'DISTRIBUTOR') navigate('/distributor/dashboard', { replace: true });
+      else if (user.role === 'DRIVER')      navigate('/driver/dashboard',      { replace: true });
+      else if (user.role === 'ADMIN')       navigate('/admin/dashboard',       { replace: true });
+      else                                  navigate('/',                       { replace: true });
     },
     onError: (error: any) => {
       console.log('❌ Error:', error);
@@ -91,19 +106,25 @@ const RegisterPage = () => {
 
             {/* Role selector */}
             <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Rolingiz</label>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                Rolingiz
+              </label>
               <div className="grid grid-cols-2 gap-3">
                 {[
                   { value: 'DISTRIBUTOR', icon: Briefcase, label: 'Distribyutor' },
                   { value: 'STORE',       icon: Store,     label: "Do'kon egasi" },
                 ].map(({ value, icon: Icon, label }) => (
-                  <button key={value} type="button" onClick={() => setValue('role', value as any)}
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setValue('role', value as any)}
                     className={cn(
                       'flex items-center gap-3 p-3.5 rounded-xl border text-sm font-medium transition-all',
                       selectedRole === value
                         ? 'border-violet-500 bg-violet-50 text-violet-700 shadow-sm'
                         : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50'
-                    )}>
+                    )}
+                  >
                     <div className={cn(
                       'w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
                       selectedRole === value ? 'bg-violet-600 text-white' : 'bg-slate-100 text-slate-500'
@@ -148,7 +169,7 @@ const RegisterPage = () => {
               />
             </div>
 
-            {/* Parol — ko'rish tugmasi bilan */}
+            {/* Parol */}
             <div className="space-y-1.5">
               <label className="block text-sm font-semibold text-slate-700">Parol</label>
               <div className="relative">

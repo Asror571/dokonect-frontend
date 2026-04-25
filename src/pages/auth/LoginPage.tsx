@@ -25,12 +25,37 @@ export const LoginPage: React.FC = () => {
         password,
       });
 
+      console.log('✅ Login response:', response.data);
+
+      // API: { user, token } yoki { data: { user, token } } yoki { data: { user, accessToken } }
       const payload      = response.data?.data ?? response.data;
       const user         = payload?.user        ?? payload;
-      const accessToken  = payload?.accessToken ?? payload?.token  ?? '';
+      const accessToken  = payload?.token       ?? payload?.accessToken ?? '';
       const refreshToken = payload?.refreshToken ?? '';
 
-      setAuth(user, accessToken, refreshToken);
+      console.log('👤 User:', user);
+      console.log('🔑 Token:', accessToken);
+
+      if (!user?.id) {
+        toast.error('Foydalanuvchi topilmadi');
+        return;
+      }
+
+      setAuth(
+        {
+          id:            user.id,
+          name:          user.name,
+          email:         user.email         ?? '',
+          phone:         user.phone         ?? '',
+          role:          user.role,
+          distributorId: user.distributorId ?? user.distributor?.id ?? undefined,
+          clientId:      user.clientId      ?? user.client?.id      ?? undefined,
+          driverId:      user.driverId      ?? user.driver?.id      ?? undefined,
+        },
+        accessToken,
+        refreshToken,
+      );
+
       toast.success('Xush kelibsiz!');
 
       if (user.role === 'DISTRIBUTOR')                           navigate('/distributor/dashboard', { replace: true });
@@ -40,6 +65,7 @@ export const LoginPage: React.FC = () => {
       else                                                       navigate('/',                       { replace: true });
 
     } catch (error: any) {
+      console.log('❌ Login error:', error.response?.data);
       toast.error(error.response?.data?.message || 'Login xatosi');
     } finally {
       setLoading(false);
@@ -83,7 +109,9 @@ export const LoginPage: React.FC = () => {
         <form onSubmit={handleLogin} className="space-y-5">
           {loginType === 'email' ? (
             <div>
-              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Email manzil</label>
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">
+                Email manzil
+              </label>
               <div className="relative group">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
                 <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
@@ -93,7 +121,9 @@ export const LoginPage: React.FC = () => {
             </div>
           ) : (
             <div>
-              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Telefon raqam</label>
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">
+                Telefon raqam
+              </label>
               <div className="relative group">
                 <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
                 <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
@@ -103,9 +133,11 @@ export const LoginPage: React.FC = () => {
             </div>
           )}
 
-          {/* Parol — ko'rish tugmasi bilan */}
+          {/* Parol */}
           <div>
-            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Parol</label>
+            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">
+              Parol
+            </label>
             <div className="relative group">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
               <input

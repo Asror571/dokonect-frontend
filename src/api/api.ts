@@ -1,6 +1,18 @@
-import api from '../lib/axios';
+import axios from 'axios';
 
-export const API_URL = import.meta.env.VITE_API_URL || 'https://dokonect-server.onrender.com';
+const api = axios.create({
+  baseURL: '',   // ← bo'sh, Vercel proxy orqali o'tadi
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('accessToken');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
 export default api;
-

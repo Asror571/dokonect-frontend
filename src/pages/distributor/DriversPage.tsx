@@ -44,7 +44,7 @@ const DriversPage = () => {
 
   const { mutate: toggleStatus } = useMutation({
     mutationFn: (driver: any) =>
-      api.put(`/api/distributor/drivers/${driver.id}`, {
+      api.patch(`/api/distributor/drivers/${driver.id}`, {
         status: driver.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE',
       }),
     onSuccess: () => {

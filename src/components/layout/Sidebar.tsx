@@ -2,7 +2,8 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   LogOut, LayoutDashboard, Package, ClipboardList, 
   BarChart3, MessageSquare, Truck,
-  Zap, Warehouse, Tag, Settings
+  Zap, Warehouse, Tag, Settings,
+  FolderOpen
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 
@@ -16,6 +17,7 @@ const menuItems = [
   { to: '/distributor/pricing',   icon: Tag,             label: 'Narxlash' },
   { to: '/distributor/chat',      icon: MessageSquare,   label: 'Chat' },
   { to: '/distributor/settings',  icon: Settings,        label: 'Sozlamalar' },
+  { to: '/distributor/categories', icon: FolderOpen, label: 'Kategoriyalar' },
 ];
 
 const Sidebar = () => {

@@ -26,6 +26,7 @@ import StoreOrdersPage from './pages/store/StoreOrdersPage';
 import CatalogPage from './pages/store/CatalogPage';
 import DistributorsPage from './pages/store/DistributorsPage';
 import FinancePage from './pages/store/FinancePage';
+import CategoriesPage from './pages/distributor/CategoriesPage';
 
 // ─── ProtectedRoute ───────────────────────────────────────────────────────────
 const ProtectedRoute = ({
@@ -99,6 +100,7 @@ function App() {
           <Route path="/distributor/pricing"   element={<ProtectedRoute roles={['DISTRIBUTOR', 'ADMIN']}><PricingPage /></ProtectedRoute>} />
           <Route path="/distributor/chat"      element={<ProtectedRoute roles={['DISTRIBUTOR', 'ADMIN']}><DistributorChatPage /></ProtectedRoute>} />
           <Route path="/distributor/settings"  element={<ProtectedRoute roles={['DISTRIBUTOR', 'ADMIN']}><SettingsPage /></ProtectedRoute>} />
+          <Route path="/distributor/categories" element={<ProtectedRoute roles={['DISTRIBUTOR', 'ADMIN']}><CategoriesPage /></ProtectedRoute>} />
 
           {/* ── STORE / CLIENT ── */}
           <Route path="/store/dashboard"    element={<ProtectedRoute roles={['CLIENT', 'STORE', 'ADMIN']}><StoreDashboard /></ProtectedRoute>} />

@@ -6,7 +6,7 @@ export interface User {
   name: string;
   phone: string;
   email?: string;
-  role: 'ADMIN' | 'DISTRIBUTOR' | 'DRIVER' | 'CLIENT';
+  role: 'ADMIN' | 'DISTRIBUTOR' | 'DRIVER' | 'CLIENT' | 'STORE'; // ← STORE qo'shildi
   subRole?: 'SUPER_ADMIN' | 'WAREHOUSE_MANAGER' | 'SALES_MANAGER' | 'DRIVER_MANAGER' | null;
   permissions?: any;
   avatar?: string;
@@ -40,8 +40,6 @@ export const useAuthStore = create<AuthState>()(
       isLoading: false,
 
       setAuth: (user, accessToken, refreshToken) => {
-        // distributorId / clientId / driverId — response ichida turli joylarda kelishi mumkin
-        // Shuning uchun hamma variantni tekshiramiz
         const enrichedUser: User = {
           ...user,
           distributorId: user.distributorId ?? (user as any).distributor?.id ?? undefined,
@@ -74,24 +72,12 @@ export const useAuthStore = create<AuthState>()(
 
       clearAuth: () => {
         localStorage.clear();
-        set({
-          user: null,
-          accessToken: null,
-          refreshToken: null,
-          isAuthenticated: false,
-          isLoading: false,
-        });
+        set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false, isLoading: false });
       },
 
       logout: () => {
         localStorage.clear();
-        set({
-          user: null,
-          accessToken: null,
-          refreshToken: null,
-          isAuthenticated: false,
-          isLoading: false,
-        });
+        set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false, isLoading: false });
       },
 
       setLoading: (loading) => set({ isLoading: loading }),

@@ -1,19 +1,22 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LogOut, LayoutDashboard, Users, Package, ShoppingCart, Zap, Shield } from 'lucide-react';
-import { useAuthStore } from '../../store/auth.store';
+import {
+  LayoutDashboard, Users, ShoppingCart, TrendingUp,
+  LogOut, Shield, Zap,
+} from 'lucide-react';
+import { useAuthStore } from '../../store/authStore';  // ← to'g'ri import
 
 const menuItems = [
-  { to: '/admin',          icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/admin/users',    icon: Users,           label: 'Foydalanuvchilar' },
-  { to: '/admin/products', icon: Package,         label: 'Mahsulotlar' },
-  { to: '/admin/orders',   icon: ShoppingCart,    label: 'Buyurtmalar' },
+  { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard'         },
+  { to: '/admin/users',     icon: Users,           label: 'Foydalanuvchilar'  },
+  { to: '/admin/orders',    icon: ShoppingCart,    label: 'Buyurtmalar'       },
+  { to: '/admin/analytics', icon: TrendingUp,      label: 'Analitika'         },
 ];
 
 const AdminSidebar = () => {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
 
-  const handleLogout = () => { logout(); navigate('/login'); };
+  const handleLogout = () => { logout(); navigate('/login', { replace: true }); };
 
   return (
     <aside className="w-64 bg-slate-900 flex flex-col h-full fixed left-0 top-0 z-50">
@@ -31,12 +34,13 @@ const AdminSidebar = () => {
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-        <p className="px-3 mb-2 text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Admin Panel</p>
+        <p className="px-3 mb-2 text-[10px] font-semibold text-slate-500 uppercase tracking-widest">
+          Admin Panel
+        </p>
         {menuItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
-            end={item.to === '/admin'}
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
                 isActive
@@ -51,14 +55,14 @@ const AdminSidebar = () => {
         ))}
       </nav>
 
-      {/* User */}
+      {/* User + Logout */}
       <div className="px-3 py-4 border-t border-slate-800 space-y-1">
         <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg">
           <div className="w-8 h-8 rounded-lg bg-violet-600/20 text-violet-400 flex items-center justify-center shrink-0">
             <Shield className="w-4 h-4" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-white truncate">{user?.email}</p>
+            <p className="text-sm font-semibold text-white truncate">{user?.name || 'Admin'}</p>
             <p className="text-[10px] text-slate-500 uppercase tracking-wider">Admin</p>
           </div>
         </div>

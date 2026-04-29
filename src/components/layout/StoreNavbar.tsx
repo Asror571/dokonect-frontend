@@ -1,21 +1,24 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../../store/auth.store';
+import { useAuthStore } from '../../store/authStore';  // ← to'g'ri import
 import { useCartStore } from '../../store/cart.store';
-import { ShoppingCart, LogOut, LayoutGrid, PackageOpen, Zap, MessageSquare } from 'lucide-react';
+import { ShoppingCart, LogOut, LayoutGrid, PackageOpen, Zap, MessageSquare, Users } from 'lucide-react';
 
 const navLinks = [
-  { to: '/catalog', icon: LayoutGrid,    label: 'Katalog' },
-  { to: '/orders',  icon: PackageOpen,   label: 'Buyurtmalar' },
-  { to: '/chat',    icon: MessageSquare, label: 'Chat' },
+  { to: '/store/catalog',      icon: LayoutGrid,    label: 'Katalog'      },
+  { to: '/store/orders',       icon: PackageOpen,   label: 'Buyurtmalar'  },
+  { to: '/store/distributors', icon: Users,         label: 'Hamkorlar'    },
+  { to: '/store/chat',         icon: MessageSquare, label: 'Chat'         },
 ];
 
 const StoreNavbar = () => {
   const { user, logout } = useAuthStore();
-  const { items } = useCartStore();
-  const navigate = useNavigate();
+  const { items }        = useCartStore();
+  const navigate         = useNavigate();
 
   const cartCount = items.reduce((acc, i) => acc + i.quantity, 0);
-  const initials = user?.name?.slice(0, 2).toUpperCase() || 'S';
+  const initials  = user?.name?.slice(0, 2).toUpperCase() || 'S';
+
+  const handleLogout = () => { logout(); navigate('/login', { replace: true }); };
 
   return (
     <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200/60 shadow-sm">
@@ -23,7 +26,7 @@ const StoreNavbar = () => {
         <div className="flex items-center justify-between h-16">
 
           {/* Logo */}
-          <NavLink to="/" className="flex items-center gap-2.5 shrink-0">
+          <NavLink to="/store/dashboard" className="flex items-center gap-2.5 shrink-0">
             <div className="w-7 h-7 bg-violet-600 rounded-lg flex items-center justify-center shadow-md shadow-violet-500/30">
               <Zap className="w-3.5 h-3.5 text-white" />
             </div>
@@ -32,17 +35,13 @@ const StoreNavbar = () => {
             </span>
           </NavLink>
 
-          {/* Nav links */}
+          {/* Nav */}
           <nav className="hidden md:flex items-center gap-1">
             {navLinks.map((link) => (
-              <NavLink
-                key={link.to}
-                to={link.to}
+              <NavLink key={link.to} to={link.to}
                 className={({ isActive }) =>
                   `flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    isActive
-                      ? 'bg-violet-50 text-violet-700'
-                      : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                    isActive ? 'bg-violet-50 text-violet-700' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
                   }`
                 }
               >
@@ -52,11 +51,10 @@ const StoreNavbar = () => {
             ))}
           </nav>
 
-          {/* Right actions */}
+          {/* Right */}
           <div className="flex items-center gap-2">
             {/* Cart */}
-            <NavLink
-              to="/cart"
+            <NavLink to="/store/cart"
               className={({ isActive }) =>
                 `relative p-2 rounded-lg transition-all ${
                   isActive ? 'bg-violet-50 text-violet-600' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
@@ -73,7 +71,7 @@ const StoreNavbar = () => {
 
             {/* Profile */}
             <button
-              onClick={() => navigate('/profile')}
+              onClick={() => navigate('/store/dashboard')}
               className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-lg hover:bg-slate-100 transition-all"
             >
               <div className="w-7 h-7 rounded-lg bg-violet-100 text-violet-700 flex items-center justify-center text-xs font-bold">
@@ -86,7 +84,7 @@ const StoreNavbar = () => {
 
             {/* Logout */}
             <button
-              onClick={() => { logout(); navigate('/login'); }}
+              onClick={handleLogout}
               className="p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all"
               title="Chiqish"
             >

@@ -69,7 +69,7 @@ const FinancePage = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 border-b border-slate-200 pb-8">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Moliya va Hisob-kitob</h1>
+          <h1 className="text-xl sm:text-3xl font-black text-slate-900 tracking-tight">Moliya va Hisob-kitob</h1>
           <p className="text-slate-500 font-medium mt-1">To'lovlar tarixi, qarzdorliklar va limitlarni kuzatib boring.</p>
         </div>
         <button className="px-6 py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10">
@@ -109,8 +109,8 @@ const FinancePage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
         {/* Orders Table */}
-        <div className="lg:col-span-2 bg-white rounded-[40px] border border-slate-200 shadow-sm overflow-hidden min-h-[500px]">
-          <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+        <div className="lg:col-span-2 bg-white rounded-2xl sm:rounded-[40px] border border-slate-200 shadow-sm overflow-hidden min-h-125">
+          <div className="px-4 sm:px-8 py-4 sm:py-6 border-b border-slate-100 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-slate-100 rounded-lg"><History className="w-5 h-5 text-slate-600" /></div>
               <h2 className="text-lg font-black text-slate-900 tracking-tight">Xaridlar va To'lovlar</h2>
@@ -125,16 +125,16 @@ const FinancePage = () => {
             <table className="w-full text-left">
               <thead className="bg-slate-50 text-[10px] uppercase tracking-widest font-black text-slate-400">
                 <tr>
-                  <th className="px-8 py-4">ID / Vazifa</th>
-                  <th className="px-8 py-4 text-center">Status</th>
-                  <th className="px-8 py-4 text-right">Summa</th>
-                  <th className="px-8 py-4 text-right">Amaliyot</th>
+                  <th className="px-3 sm:px-8 py-3">ID / Vazifa</th>
+                  <th className="px-3 sm:px-8 py-3 text-center hidden sm:table-cell">Status</th>
+                  <th className="px-3 sm:px-8 py-3 text-right">Summa</th>
+                  <th className="px-3 sm:px-8 py-3 text-right hidden sm:table-cell">Amaliyot</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-sans">
                 {orders.map((order: any) => (
                   <tr key={order.id} className="hover:bg-slate-50 transition-colors group cursor-pointer">
-                    <td className="px-8 py-5">
+                    <td className="px-3 sm:px-8 py-3 sm:py-5">
                       <div className="flex flex-col">
                         <span className="text-xs font-black text-indigo-500 font-mono tracking-tight uppercase">ORD-{order.id.slice(0, 8)}</span>
                         <span className="text-sm font-bold text-slate-900 mt-1">{order.distributor?.companyName}</span>
@@ -143,16 +143,16 @@ const FinancePage = () => {
                         </span>
                       </div>
                     </td>
-                    <td className="px-8 py-5 text-center">
+                    <td className="px-3 sm:px-8 py-3 sm:py-5 text-center hidden sm:table-cell">
                       <Badge variant={getStatusColor(order.paymentStatus || order.status) as any} className="font-black text-[10px] tracking-widest uppercase">
                         {order.paymentStatus || order.status}
                       </Badge>
                     </td>
-                    <td className="px-8 py-5 text-right">
+                    <td className="px-3 sm:px-8 py-3 sm:py-5 text-right">
                       <span className="text-sm font-black text-slate-900">{(order.totalAmount || 0).toLocaleString('uz-UZ')}</span>
                       <span className="text-[10px] font-bold text-slate-400 ml-1">UZS</span>
                     </td>
-                    <td className="px-8 py-5 text-right">
+                    <td className="px-3 sm:px-8 py-3 sm:py-5 text-right hidden sm:table-cell">
                       <button className="text-[10px] font-black text-indigo-500 uppercase tracking-widest border border-indigo-100 px-3 py-1.5 rounded-xl hover:bg-indigo-50 transition-colors opacity-0 group-hover:opacity-100">
                         Batafsil
                       </button>

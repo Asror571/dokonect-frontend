@@ -1,4 +1,4 @@
-import React, {  } from 'react';
+import React from 'react';
 import {
   Package,
   DollarSign,
@@ -10,22 +10,22 @@ import { KPICard } from '../../components/ui/KPICard';
 import { OrderCard } from '../../components/ui/OrderCard';
 import { DriverCard } from '../../components/ui/DriverCard';
 import { useQuery } from '@tanstack/react-query';
-import { api } from '../../services/api';
+import api from '../../api/api';
 
 export const AdminDashboard: React.FC = () => {
   const { data: stats } = useQuery({
     queryKey: ['admin-stats'],
-    queryFn: () => api.get('/admin/dashboard/stats').then(res => res.data),
+    queryFn: () => api.get('/api/admin/dashboard').then(res => res.data),
   });
 
   const { data: recentOrders } = useQuery({
     queryKey: ['recent-orders'],
-    queryFn: () => api.get('/admin/orders/recent').then(res => res.data),
+    queryFn: () => api.get('/api/admin/orders').then(res => res.data),
   });
 
   const { data: activeDrivers } = useQuery({
     queryKey: ['active-drivers'],
-    queryFn: () => api.get('/admin/drivers/active').then(res => res.data),
+    queryFn: () => api.get('/api/admin/drivers/active').then(res => res.data),
   });
 
   return (

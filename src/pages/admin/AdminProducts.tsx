@@ -13,19 +13,19 @@ const AdminProducts = () => {
   const { data, isLoading } = useQuery({
     queryKey: ['admin-products', page],
     queryFn: async () => {
-      const res = await api.get(`/admin/products?page=${page}`);
-      return res.data.data;
+      const res = await api.get(`/api/products`, { params: { page, limit: 20 } });
+      return res.data;
     },
   });
 
   const { mutate: deactivate } = useMutation({
-    mutationFn: (id: string) => api.patch(`/admin/products/${id}/deactivate`),
+    mutationFn: (id: string) => api.patch(`/api/products/${id}`, { status: 'DRAFT' }),
     onSuccess: () => { toast.success('Deaktiv qilindi'); queryClient.invalidateQueries({ queryKey: ['admin-products'] }); },
   });
 
-  const products = data?.products || [];
-  const total    = data?.total || 0;
-  const totalPages = Math.ceil(total / 20);
+  const products   = data?.products || [];
+  const total      = data?.pagination?.total ?? products.length;
+  const totalPages = data?.pagination?.totalPages ?? Math.ceil(total / 20);
 
   return (
     <div className="fade-in space-y-4">
@@ -53,22 +53,22 @@ const AdminProducts = () => {
                 <tr key={p.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      {p.imageUrl && (
-                        <img src={p.imageUrl} alt={p.name} className="w-8 h-8 rounded-lg object-cover" />
+                      {p.images?.[0]?.url && (
+                        <img src={p.images[0].url} alt={p.name} className="w-8 h-8 rounded-lg object-cover" />
                       )}
                       <div>
                         <p className="font-medium text-slate-800">{p.name}</p>
-                        <p className="text-xs text-slate-400">{p.category}</p>
+                        <p className="text-xs text-slate-400">{p.category?.name}</p>
                       </div>
                     </div>
                   </td>
                   <td className="px-4 py-3 text-slate-600">{p.distributor?.companyName}</td>
-                  <td className="px-4 py-3 font-medium text-violet-600">{p.price.toLocaleString('uz-UZ')} UZS</td>
+                  <td className="px-4 py-3 font-medium text-violet-600">{(p.wholesalePrice || 0).toLocaleString('uz-UZ')} UZS</td>
                   <td className="px-4 py-3">
-                    {p.isActive ? <Badge variant="success">Faol</Badge> : <Badge variant="danger">Nofaol</Badge>}
+                    {p.status === 'ACTIVE' ? <Badge variant="success">Faol</Badge> : <Badge variant="danger">Nofaol</Badge>}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    {p.isActive && (
+                    {p.status === 'ACTIVE' && (
                       <Button size="sm" variant="danger" onClick={() => deactivate(p.id)}>
                         <EyeOff className="w-3.5 h-3.5 mr-1" />
                         Deaktiv

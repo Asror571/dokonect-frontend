@@ -21,30 +21,31 @@ const AdminUsers = () => {
   const { data, isLoading } = useQuery({
     queryKey: ['admin-users', role, page],
     queryFn: async () => {
-      const res = await api.get(`/admin/users?role=${role}&page=${page}`);
-      return res.data.data;
+      const res = await api.get(`/api/admin/users`, { params: { role, page } });
+      return res.data;
     },
   });
 
   const { mutate: blockUser }   = useMutation({
-    mutationFn: (id: string) => api.patch(`/admin/users/${id}/block`),
+    mutationFn: (id: string) => api.patch(`/api/admin/users/${id}/status`, { status: 'SUSPENDED' }),
     onSuccess: () => { toast.success('Bloklandi'); queryClient.invalidateQueries({ queryKey: ['admin-users'] }); },
   });
   const { mutate: unblockUser } = useMutation({
-    mutationFn: (id: string) => api.patch(`/admin/users/${id}/unblock`),
+    mutationFn: (id: string) => api.patch(`/api/admin/users/${id}/status`, { status: 'ACTIVE' }),
     onSuccess: () => { toast.success('Blok olib tashlandi'); queryClient.invalidateQueries({ queryKey: ['admin-users'] }); },
   });
   const { mutate: verifyDist }  = useMutation({
-    mutationFn: (id: string) => api.patch(`/admin/distributors/${id}/verify`),
+    mutationFn: (id: string) => api.patch(`/api/admin/distributors/${id}`, { isVerified: true }),
     onSuccess: () => { toast.success('Tasdiqlandi'); queryClient.invalidateQueries({ queryKey: ['admin-users'] }); },
   });
 
-  const users = data?.users || [];
-  const total = data?.total || 0;
+  const users = Array.isArray(data) ? data : (data?.users || []);
+  const total = data?.total ?? users.length;
 
   const filtered = users.filter((u: any) =>
-    u.email.toLowerCase().includes(search.toLowerCase()) ||
-    (u.storeOwner?.storeName || u.distributor?.companyName || '').toLowerCase().includes(search.toLowerCase())
+    (u.name || '').toLowerCase().includes(search.toLowerCase()) ||
+    (u.phone || '').toLowerCase().includes(search.toLowerCase()) ||
+    (u.distributor?.companyName || '').toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -93,23 +94,24 @@ const AdminUsers = () => {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filtered.map((user: any) => {
-                const name = user.storeOwner?.storeName || user.distributor?.companyName || 'Admin';
+                const name = user.name || user.distributor?.companyName || user.client?.storeName || 'Admin';
                 const distId = user.distributor?.id;
                 const isVerified = user.distributor?.isVerified;
+                const isSuspended = user.status === 'SUSPENDED';
 
                 return (
                   <tr key={user.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3">
                       <p className="font-medium text-slate-800">{name}</p>
-                      <p className="text-xs text-slate-400">{user.email}</p>
+                      <p className="text-xs text-slate-400">{user.phone || user.email}</p>
                     </td>
                     <td className="px-4 py-3">
                       <Badge variant={user.role === 'ADMIN' ? 'primary' : 'secondary'}>
-                        {roleLabels[user.role]}
+                        {roleLabels[user.role] || user.role}
                       </Badge>
                     </td>
                     <td className="px-4 py-3">
-                      {user.isBlocked ? (
+                      {isSuspended ? (
                         <Badge variant="danger">Bloklangan</Badge>
                       ) : (
                         <Badge variant="success">Faol</Badge>
@@ -123,7 +125,7 @@ const AdminUsers = () => {
                             Tasdiqlash
                           </Button>
                         )}
-                        {user.isBlocked ? (
+                        {isSuspended ? (
                           <Button size="sm" variant="outline" onClick={() => unblockUser(user.id)}>
                             <ShieldOff className="w-3.5 h-3.5 mr-1" />
                             Blokdan chiqar

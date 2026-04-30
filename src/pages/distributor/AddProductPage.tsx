@@ -11,7 +11,7 @@ import { ImagePlus, ArrowLeft, CheckCircle2, X, Package } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import toast from 'react-hot-toast';
 import api from '../../api/api';
-import { updateDistributorProductStockFn } from '../../api/ distributor.api';
+import { updateDistributorProductStockFn } from '../../api/distributor.api';
 
 const productSchema = z.object({
   name:           z.string().min(3, 'Mahsulot nomi kiritilishi shart'),
@@ -26,7 +26,7 @@ const productSchema = z.object({
   description:    z.string().optional(),
   youtubeUrl:     z.string().optional(),
   unit:           z.string().min(1, 'Birlik kiritilishi shart'),
-  status:         z.enum(['ACTIVE', 'INACTIVE', 'DRAFT']),
+  status:         z.enum(['ACTIVE', 'DRAFT', 'OUT_OF_STOCK']),
   initialStock:   z.string().optional(),
 });
 type ProductForm = z.infer<typeof productSchema>;
@@ -112,11 +112,11 @@ const AddProductPage = () => {
     if (images.length === 0) return [];
     try {
       const formData = new FormData();
-      images.forEach((img) => formData.append('images', img));
-      const res = await api.post('/api/upload', formData, {
+      images.forEach((img) => formData.append('files', img));
+      const res = await api.post('/api/upload/multiple', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      return res.data?.data || res.data?.urls || [];
+      return res.data?.urls || [];
     } catch { return []; }
   };
 
@@ -329,7 +329,7 @@ const AddProductPage = () => {
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition-all">
                   <option value="ACTIVE">Faol</option>
                   <option value="DRAFT">Qoralama</option>
-                  <option value="INACTIVE">Nofaol</option>
+                  <option value="OUT_OF_STOCK">Tugagan</option>
                 </select>
               </div>
 

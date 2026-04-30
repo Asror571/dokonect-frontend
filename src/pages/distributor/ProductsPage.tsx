@@ -43,27 +43,25 @@ export const ProductsPage: React.FC = () => {
   const products = data?.products || [];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-8 py-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Mahsulotlar</h1>
-            <p className="text-gray-600 mt-1">
-              Jami: {data?.pagination?.total ?? 0} ta mahsulot
-            </p>
-          </div>
-          <button
-            onClick={() => navigate('/distributor/products/add')}
-            className="flex items-center gap-2 px-4 py-2 bg-sky-500 text-white rounded-lg hover:bg-sky-600 transition-colors font-medium"
-          >
-            <Plus className="w-5 h-5" />
-            Mahsulot qo'shish
-          </button>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Mahsulotlar</h1>
+          <p className="text-slate-500 text-sm mt-0.5">
+            Jami: {data?.pagination?.total ?? 0} ta mahsulot
+          </p>
         </div>
+        <button
+          onClick={() => navigate('/distributor/products/add')}
+          className="flex items-center gap-2 px-4 py-2.5 bg-sky-500 text-white rounded-xl hover:bg-sky-600 transition-colors font-semibold text-sm self-start sm:self-auto"
+        >
+          <Plus className="w-4 h-4" />
+          Mahsulot qo'shish
+        </button>
       </div>
 
-      <div className="p-8">
+      <div>
         {/* Filters */}
         <div className="mb-6 flex flex-wrap gap-3 items-center">
           {/* Search */}

@@ -66,7 +66,7 @@ const CatalogPage = () => {
     <div className="page fade-in max-w-7xl mx-auto pb-12">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Mahsulotlar Katalogi</h1>
+        <h1 className="text-xl sm:text-3xl font-black text-slate-900 tracking-tight">Mahsulotlar Katalogi</h1>
         <p className="text-slate-500 font-medium mt-1">Hamkorlarimiz mahsulotlarini ko'ring va savatga qo'shing.</p>
       </div>
 
@@ -89,8 +89,8 @@ const CatalogPage = () => {
             )}
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="relative min-w-[200px]">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative flex-1 min-w-35">
               <SlidersHorizontal className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <select
                 value={category}
@@ -104,7 +104,7 @@ const CatalogPage = () => {
             <select
               value={sortBy}
               onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
-              className="pl-4 pr-8 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-700 appearance-none focus:ring-2 focus:ring-indigo-500/20 outline-none"
+              className="flex-1 min-w-30 pl-4 pr-8 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-700 appearance-none focus:ring-2 focus:ring-indigo-500/20 outline-none"
             >
               <option value="newest">Yangi</option>
               <option value="price_asc">Arzonroq</option>

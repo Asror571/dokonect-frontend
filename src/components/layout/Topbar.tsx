@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useAuthStore } from '../../store/authStore';
-import { Bell, Search, Globe, ChevronDown, User, LogOut, Settings, Shield, Zap } from 'lucide-react';
+import { Bell, Search, Globe, ChevronDown, User, LogOut, Settings, Shield, Zap, Menu } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
-const Topbar = () => {
+const Topbar = ({ onMenuClick }: { onMenuClick?: () => void } = {}) => {
   const { user, logout } = useAuthStore();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -16,6 +16,14 @@ const Topbar = () => {
   return (
     <header className="h-16 bg-white border-b border-slate-200 sticky top-0 z-40 px-6 sm:px-8 flex items-center justify-between shadow-sm backdrop-blur-md bg-white/80">
       
+      {/* Mobile hamburger */}
+      <button
+        onClick={onMenuClick}
+        className="lg:hidden p-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors mr-2"
+      >
+        <Menu className="w-5 h-5" />
+      </button>
+
       {/* Left: Global Search */}
       <div className="relative flex-1 max-w-md hidden md:block group">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />

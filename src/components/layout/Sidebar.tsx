@@ -1,28 +1,40 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { 
-  LogOut, LayoutDashboard, Package, ClipboardList, 
+import {
+  LogOut, LayoutDashboard, Package, ClipboardList,
   BarChart3, MessageSquare, Truck,
   Zap, Warehouse, Tag, Settings,
-  FolderOpen
+  FolderOpen, DollarSign, Users
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 
-const menuItems = [
-  { to: '/distributor/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/distributor/orders',    icon: ClipboardList,   label: 'Buyurtmalar' },
-  { to: '/distributor/products',  icon: Package,         label: 'Mahsulotlar' },
-  { to: '/distributor/inventory', icon: Warehouse,       label: 'Inventar' },
-  { to: '/distributor/drivers',   icon: Truck,           label: 'Haydovchilar' },
-  { to: '/distributor/analytics', icon: BarChart3,       label: 'Analytics' },
-  { to: '/distributor/pricing',   icon: Tag,             label: 'Narxlash' },
-  { to: '/distributor/chat',      icon: MessageSquare,   label: 'Chat' },
-  { to: '/distributor/settings',  icon: Settings,        label: 'Sozlamalar' },
-  { to: '/distributor/categories', icon: FolderOpen, label: 'Kategoriyalar' },
+const distributorMenu = [
+  { to: '/distributor/dashboard',  icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/distributor/orders',     icon: ClipboardList,   label: 'Buyurtmalar' },
+  { to: '/distributor/products',   icon: Package,         label: 'Mahsulotlar' },
+  { to: '/distributor/inventory',  icon: Warehouse,       label: 'Inventar' },
+  { to: '/distributor/drivers',    icon: Truck,           label: 'Haydovchilar' },
+  { to: '/distributor/analytics',  icon: BarChart3,       label: 'Analytics' },
+  { to: '/distributor/pricing',    icon: Tag,             label: 'Narxlash' },
+  { to: '/distributor/chat',       icon: MessageSquare,   label: 'Chat' },
+  { to: '/distributor/settings',   icon: Settings,        label: 'Sozlamalar' },
+  { to: '/distributor/categories', icon: FolderOpen,      label: 'Kategoriyalar' },
 ];
 
-const Sidebar = () => {
+const clientMenu = [
+  { to: '/store/dashboard',     icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/store/orders',        icon: ClipboardList,   label: 'Buyurtmalar' },
+  { to: '/store/catalog',       icon: Package,         label: 'Katalog' },
+  { to: '/store/distributors',  icon: Users,           label: 'Distribyutorlar' },
+  { to: '/store/finance',       icon: DollarSign,      label: 'Moliya' },
+];
+
+const Sidebar = ({ onClose }: { onClose?: () => void } = {}) => {
   const navigate = useNavigate();
-  const { logout } = useAuthStore();
+  const { logout, user } = useAuthStore();
+
+  const menuItems = (user?.role === 'CLIENT' || user?.role === 'STORE')
+    ? clientMenu
+    : distributorMenu;
 
   const handleLogout = () => {
     logout();                  // zustand state + localStorage.clear()
@@ -41,7 +53,9 @@ const Sidebar = () => {
             <span className="text-white font-black text-xl tracking-tighter leading-none">
               Doko<span className="text-indigo-400 font-bold">nect</span>
             </span>
-            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Platforma v3.0</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">
+              {(user?.role === 'CLIENT' || user?.role === 'STORE') ? "Do'kon egasi" : 'Platforma v3.0'}
+            </span>
           </div>
         </div>
       </div>
@@ -53,6 +67,7 @@ const Sidebar = () => {
           <NavLink
             key={item.to}
             to={item.to}
+            onClick={onClose}
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-bold transition-all duration-200 group ${
                 isActive

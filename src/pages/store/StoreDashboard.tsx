@@ -59,14 +59,14 @@ const StoreDashboard = () => {
     <div className="fade-in space-y-8 max-w-7xl mx-auto pb-12">
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Salom, {user?.name}! 👋</h1>
-          <p className="text-slate-500 font-medium mt-1">Do'koningizdagi oxirgi harakatlarni kuzating.</p>
+          <h1 className="text-xl sm:text-3xl font-black text-slate-900 tracking-tight">Salom, {user?.name}! 👋</h1>
+          <p className="text-slate-500 font-medium mt-1 text-sm">Do'koningizdagi oxirgi harakatlarni kuzating.</p>
         </div>
         <button
           onClick={() => navigate('/store/catalog')}
-          className="px-6 py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-600/20 active:scale-95"
+          className="px-4 py-3 sm:px-6 sm:py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-600/20 active:scale-95 self-start sm:self-auto"
         >
           <ShoppingCart className="w-4 h-4" /> Yangi xaridlar
         </button>
@@ -100,8 +100,8 @@ const StoreDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
         {/* Recent Orders Table */}
-        <div className="lg:col-span-2 bg-white rounded-[40px] border border-slate-200 shadow-sm overflow-hidden">
-          <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+        <div className="lg:col-span-2 bg-white rounded-2xl sm:rounded-[40px] border border-slate-200 shadow-sm overflow-hidden">
+          <div className="px-4 sm:px-8 py-4 sm:py-6 border-b border-slate-100 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-slate-50 rounded-lg"><Clock className="w-5 h-5 text-slate-600" /></div>
               <h2 className="text-xl font-black text-slate-900 tracking-tight">So'nggi buyurtmalar</h2>
@@ -114,28 +114,28 @@ const StoreDashboard = () => {
             <table className="w-full text-left">
               <thead className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-widest">
                 <tr>
-                  <th className="px-8 py-4">ID</th>
-                  <th className="px-8 py-4">Distribyutor</th>
-                  <th className="px-8 py-4 text-center">Status</th>
-                  <th className="px-8 py-4 text-right">Summa</th>
+                  <th className="px-3 sm:px-8 py-3">ID</th>
+                  <th className="px-3 sm:px-8 py-3 hidden sm:table-cell">Distribyutor</th>
+                  <th className="px-3 sm:px-8 py-3 text-center">Status</th>
+                  <th className="px-3 sm:px-8 py-3 text-right">Summa</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {recentOrders.map((order: any) => (
                   <tr key={order.id} onClick={() => navigate(`/store/orders/${order.id}`)} className="hover:bg-slate-50/50 transition-colors cursor-pointer group">
-                    <td className="px-8 py-5">
+                    <td className="px-3 sm:px-8 py-3 sm:py-5">
                       <span className="text-[11px] font-black text-indigo-500 font-mono">ORD-{order.id.slice(0, 8)}</span>
                       <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">{format(new Date(order.createdAt), 'dd MMM', { locale: uz })}</p>
                     </td>
-                    <td className="px-8 py-5">
+                    <td className="px-3 sm:px-8 py-3 sm:py-5 hidden sm:table-cell">
                       <span className="text-sm font-black text-slate-900 group-hover:text-indigo-600 transition-colors">
                         {order.distributor?.companyName}
                       </span>
                     </td>
-                    <td className="px-8 py-5 text-center">
+                    <td className="px-3 sm:px-8 py-3 sm:py-5 text-center">
                       <Badge variant={getStatusColor(order.status) as any} className="font-black text-[10px] tracking-widest uppercase py-1.5 px-3">{order.status}</Badge>
                     </td>
-                    <td className="px-8 py-5 text-right">
+                    <td className="px-3 sm:px-8 py-3 sm:py-5 text-right">
                       <p className="text-sm font-black text-slate-900">{(order.totalAmount || 0).toLocaleString('uz-UZ')}</p>
                       <p className="text-[9px] font-bold text-slate-400 uppercase">UZS</p>
                     </td>

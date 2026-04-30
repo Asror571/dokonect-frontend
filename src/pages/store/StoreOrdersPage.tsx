@@ -1,6 +1,6 @@
 
 import { useQuery } from '@tanstack/react-query';
-import { api } from '../../services/api';
+import api from '../../api/api';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '../../components/ui/Badge';
 import { format } from 'date-fns';
@@ -13,13 +13,15 @@ const StoreOrdersPage = () => {
   const { data: ordersResponse, isLoading } = useQuery({
     queryKey: ['store-orders'],
     queryFn: async () => {
-      const response = await api.get('/client/orders');
+      const response = await api.get('/api/orders');
       return response.data;
     },
     staleTime: 30000,
   });
 
-  const orders = ordersResponse?.data?.orders || [];
+  const orders = Array.isArray(ordersResponse?.data) ? ordersResponse.data
+    : Array.isArray(ordersResponse) ? ordersResponse
+    : ordersResponse?.data?.orders || [];
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -54,7 +56,7 @@ const StoreOrdersPage = () => {
     <div className="fade-in space-y-6 max-w-7xl mx-auto pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 underline decoration-indigo-500 underline-offset-8">Mening Buyurtmalarim</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 underline decoration-indigo-500 underline-offset-8">Mening Buyurtmalarim</h1>
           <p className="text-slate-500 text-sm mt-1">Barcha buyurtmalarni kuzating va boshqaring.</p>
         </div>
         

@@ -16,7 +16,7 @@ export interface CreateOrderPayload {
   notes?: string;
   deliveryFee?: number;
   discount?: number;
-  paymentMethod?: 'CASH' | 'CARD' | 'TRANSFER';
+  paymentMethod?: 'CASH' | 'CARD' | 'BANK_TRANSFER';
   dueDate?: string;
 }
 

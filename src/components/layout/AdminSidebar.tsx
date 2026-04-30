@@ -1,15 +1,17 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, ShoppingCart, TrendingUp,
-  LogOut, Shield, Zap,
+  LogOut, Shield, Zap, Truck, Package,
 } from 'lucide-react';
-import { useAuthStore } from '../../store/authStore';  // ← to'g'ri import
+import { useAuthStore } from '../../store/authStore';
 
 const menuItems = [
-  { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard'         },
-  { to: '/admin/users',     icon: Users,           label: 'Foydalanuvchilar'  },
-  { to: '/admin/orders',    icon: ShoppingCart,    label: 'Buyurtmalar'       },
-  { to: '/admin/analytics', icon: TrendingUp,      label: 'Analitika'         },
+  { to: '/admin/dashboard',     icon: LayoutDashboard, label: 'Dashboard'        },
+  { to: '/admin/distributors',  icon: Truck,           label: 'Distribyutorlar'  },
+  { to: '/admin/users',         icon: Users,           label: 'Foydalanuvchilar' },
+  { to: '/admin/orders',        icon: ShoppingCart,    label: 'Buyurtmalar'      },
+  { to: '/admin/products',      icon: Package,         label: 'Mahsulotlar'      },
+  { to: '/admin/analytics',     icon: TrendingUp,      label: 'Analitika'        },
 ];
 
 const AdminSidebar = () => {

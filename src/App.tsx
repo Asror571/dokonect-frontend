@@ -28,6 +28,15 @@ import DistributorsPage from './pages/store/DistributorsPage';
 import FinancePage from './pages/store/FinancePage';
 import CategoriesPage from './pages/distributor/CategoriesPage';
 
+// Admin Pages
+import AdminLayout from './components/layout/AdminLayout';
+import { AdminDashboard } from './pages/admin/AdminDashboard';
+import AdminUsers from './pages/admin/AdminUsers';
+import AdminOrders from './pages/admin/AdminOrders';
+import AdminDistributorsPage from './pages/admin/AdminDistributorsPage';
+import AdminProducts from './pages/admin/AdminProducts';
+import AdminAnalyticsPage from './pages/admin/AdminAnalyticsPage';
+
 // ─── ProtectedRoute ───────────────────────────────────────────────────────────
 const ProtectedRoute = ({
   children,
@@ -48,9 +57,8 @@ const ProtectedRoute = ({
     // Role mos kelmasa — o'z dashboardiga yo'naltirish
     if (user.role === 'DISTRIBUTOR') return <Navigate to="/distributor/dashboard" replace />;
     if (user.role === 'CLIENT')      return <Navigate to="/store/dashboard" replace />;
-    if (user.role === 'DRIVER')      return <Navigate to="/driver/dashboard" replace />;
     if (user.role === 'ADMIN')       return <Navigate to="/admin/dashboard" replace />;
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   return <>{children}</>;
@@ -64,7 +72,6 @@ const HomeRedirect = () => {
 
   if (user?.role === 'DISTRIBUTOR') return <Navigate to="/distributor/dashboard" replace />;
   if (user?.role === 'CLIENT')      return <Navigate to="/store/dashboard" replace />;
-  if (user?.role === 'DRIVER')      return <Navigate to="/driver/dashboard" replace />;
   if (user?.role === 'ADMIN')       return <Navigate to="/admin/dashboard" replace />;
 
   return <Navigate to="/login" replace />;
@@ -101,6 +108,21 @@ function App() {
           <Route path="/distributor/chat"      element={<ProtectedRoute roles={['DISTRIBUTOR', 'ADMIN']}><DistributorChatPage /></ProtectedRoute>} />
           <Route path="/distributor/settings"  element={<ProtectedRoute roles={['DISTRIBUTOR', 'ADMIN']}><SettingsPage /></ProtectedRoute>} />
           <Route path="/distributor/categories" element={<ProtectedRoute roles={['DISTRIBUTOR', 'ADMIN']}><CategoriesPage /></ProtectedRoute>} />
+
+        </Route>
+
+        {/* ── ADMIN (o'z layouti bilan) ── */}
+        <Route element={<AdminLayout />}>
+          <Route path="/admin/dashboard"    element={<AdminDashboard />} />
+          <Route path="/admin/distributors" element={<AdminDistributorsPage />} />
+          <Route path="/admin/users"        element={<AdminUsers />} />
+          <Route path="/admin/orders"       element={<AdminOrders />} />
+          <Route path="/admin/products"     element={<AdminProducts />} />
+          <Route path="/admin/analytics"    element={<AdminAnalyticsPage />} />
+        </Route>
+
+        {/* APP LAYOUT WRAPPER — store/client */}
+        <Route element={<AppLayout />}>
 
           {/* ── STORE / CLIENT ── */}
           <Route path="/store/dashboard"    element={<ProtectedRoute roles={['CLIENT', 'STORE', 'ADMIN']}><StoreDashboard /></ProtectedRoute>} />

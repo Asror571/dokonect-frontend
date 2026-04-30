@@ -1,22 +1,27 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Package, Warehouse, History, Search, Download, RefreshCw, AlertTriangle, Edit3, X } from 'lucide-react';
+import { Package, Warehouse, History, Search, Download, RefreshCw, AlertTriangle, Edit3, X, Pencil, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 import api from '../../api/api';
 import { getProductAlertsFn, checkProductAlertsFn, markAlertAsReadFn, updateProductVelocitiesFn } from '../../api/product-alerts.api';
+import { deleteProductFn } from '../../api/product.api';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
-import { getDistributorStockLogsFn, updateDistributorProductStockFn } from '../../api/ distributor.api';
+import { getDistributorStockLogsFn, updateDistributorProductStockFn } from '../../api/distributor.api';
 
 const InventoryPage = () => {
   const queryClient = useQueryClient();
+  const navigate    = useNavigate();
   const [searchTerm,      setSearchTerm]      = useState('');
   const [warehouseFilter, setWarehouseFilter] = useState('');
   const [showLogs,        setShowLogs]        = useState(false);
   const [editStock,       setEditStock]       = useState<{ productId: string; name: string; current: number } | null>(null);
   const [stockInput,      setStockInput]      = useState('');
   const [stockType,       setStockType]       = useState<'ADD' | 'SUBTRACT' | 'SET'>('ADD');
+  const [confirmDelete,   setConfirmDelete]   = useState<{ id: string; name: string } | null>(null);
 
   // ── Inventory ─────────────────────────────────────────────────────────────
   const { data: inventoryResponse, isLoading } = useQuery({
@@ -63,6 +68,17 @@ const InventoryPage = () => {
       toast.success('Zaxira yangilandi');
       setEditStock(null);
       setStockInput('');
+    },
+    onError: (e: any) => toast.error(e.response?.data?.message || 'Xatolik'),
+  });
+
+  const { mutate: deleteProduct, isPending: isDeleting } = useMutation({
+    mutationFn: (id: string) => deleteProductFn(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['distributor-inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['distributor-products'] });
+      toast.success("Mahsulot o'chirildi");
+      setConfirmDelete(null);
     },
     onError: (e: any) => toast.error(e.response?.data?.message || 'Xatolik'),
   });
@@ -176,8 +192,8 @@ const InventoryPage = () => {
       )}
 
       {/* Stock Update Modal */}
-      {editStock && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+      {editStock && createPortal(
+        <div className="fixed inset-0 bg-black/40 z-9999 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-slate-900">Zaxira yangilash</h3>
@@ -210,7 +226,36 @@ const InventoryPage = () => {
               </Button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Delete Confirm Modal */}
+      {confirmDelete && createPortal(
+        <div className="fixed inset-0 bg-black/40 z-9999 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-slate-900">Mahsulotni o'chirish</h3>
+              <button onClick={() => setConfirmDelete(null)}><X className="w-5 h-5 text-slate-400" /></button>
+            </div>
+            <p className="text-sm text-slate-600 mb-6">
+              <strong>{confirmDelete.name}</strong> mahsulotini o'chirishni tasdiqlaysizmi? Bu amalni qaytarib bo'lmaydi.
+            </p>
+            <div className="flex gap-3">
+              <Button variant="secondary" className="flex-1" onClick={() => setConfirmDelete(null)}>
+                Bekor qilish
+              </Button>
+              <Button
+                className="flex-1 bg-red-500 hover:bg-red-600 border-red-500"
+                isLoading={isDeleting}
+                onClick={() => deleteProduct(confirmDelete.id)}
+              >
+                O'chirish
+              </Button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
 
       {/* Table */}
@@ -230,9 +275,14 @@ const InventoryPage = () => {
           <table className="w-full text-left">
             <thead className="bg-slate-50 text-slate-500 text-[11px] uppercase tracking-widest font-bold">
               <tr>
-                {['Mahsulot', 'Ombor', 'Jami', 'Band', 'Mavjud', 'Tezlik', 'Holati', ''].map((h) => (
-                  <th key={h} className="px-6 py-4">{h}</th>
-                ))}
+                <th className="px-3 sm:px-6 py-3">Mahsulot</th>
+                <th className="px-3 sm:px-6 py-3 hidden md:table-cell">Ombor</th>
+                <th className="px-3 sm:px-6 py-3 hidden sm:table-cell">Jami</th>
+                <th className="px-3 sm:px-6 py-3 hidden lg:table-cell">Band</th>
+                <th className="px-3 sm:px-6 py-3">Mavjud</th>
+                <th className="px-3 sm:px-6 py-3 hidden lg:table-cell">Tezlik</th>
+                <th className="px-3 sm:px-6 py-3 hidden sm:table-cell">Holati</th>
+                <th className="px-3 sm:px-6 py-3">Amallar</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-sm">
@@ -242,27 +292,27 @@ const InventoryPage = () => {
                 const photoUrl  = inv.product?.images?.[0]?.url;
                 return (
                   <tr key={inv.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 overflow-hidden shrink-0">
-                          {photoUrl ? <img src={photoUrl} alt={inv.product?.name} className="w-full h-full object-cover" /> : <Package className="w-5 h-5" />}
+                    <td className="px-3 sm:px-6 py-3">
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 overflow-hidden shrink-0">
+                          {photoUrl ? <img src={photoUrl} alt={inv.product?.name} className="w-full h-full object-cover" /> : <Package className="w-4 h-4 sm:w-5 sm:h-5" />}
                         </div>
-                        <div>
-                          <p className="font-bold text-slate-900">{inv.product?.name}</p>
+                        <div className="min-w-0">
+                          <p className="font-bold text-slate-900 text-xs sm:text-sm truncate max-w-32 sm:max-w-none">{inv.product?.name}</p>
                           <p className="text-[10px] text-slate-400 font-mono mt-0.5">{inv.product?.sku}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 sm:px-6 py-3 hidden md:table-cell">
                       <div className="flex items-center gap-2 text-slate-600">
                         <Warehouse className="w-4 h-4 text-slate-300" />
                         <span className="font-semibold text-xs uppercase tracking-tighter">{inv.warehouse?.name || 'Asosiy ombor'}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 font-bold text-slate-700">{inv.quantity ?? '—'}</td>
-                    <td className="px-6 py-4 font-bold text-amber-500">{inv.reserved ?? 0}</td>
-                    <td className={`px-6 py-4 font-bold ${isLow ? 'text-red-500' : 'text-emerald-600'}`}>{available}</td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 sm:px-6 py-3 font-bold text-slate-700 hidden sm:table-cell">{inv.quantity ?? '—'}</td>
+                    <td className="px-3 sm:px-6 py-3 font-bold text-amber-500 hidden lg:table-cell">{inv.reserved ?? 0}</td>
+                    <td className={`px-3 sm:px-6 py-3 font-bold ${isLow ? 'text-red-500' : 'text-emerald-600'}`}>{available}</td>
+                    <td className="px-3 sm:px-6 py-3 hidden lg:table-cell">
                       {inv.product?.velocityStatus ? (
                         <span className={`text-xs font-bold px-2 py-1 rounded-lg ${
                           inv.product.velocityStatus === 'fast'   ? 'bg-green-100 text-green-700' :
@@ -274,17 +324,33 @@ const InventoryPage = () => {
                         </span>
                       ) : <span className="text-xs text-slate-400">—</span>}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 sm:px-6 py-3 hidden sm:table-cell">
                       <Badge variant={isLow ? 'danger' : 'success'}>{isLow ? 'Kam qolgan' : 'Zaxira bor'}</Badge>
                     </td>
-                    <td className="px-6 py-4">
-                      <button
-                        onClick={() => { setEditStock({ productId: inv.product?.id || inv.productId, name: inv.product?.name || '—', current: available }); setStockInput(''); setStockType('ADD'); }}
-                        className="p-1.5 bg-slate-50 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors text-slate-400"
-                        title="Zaxirani o'zgartirish"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                      </button>
+                    <td className="px-3 sm:px-6 py-3">
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => { setEditStock({ productId: inv.product?.id || inv.productId, name: inv.product?.name || '—', current: available }); setStockInput(''); setStockType('ADD'); }}
+                          className="flex items-center gap-1 px-2 py-1.5 bg-sky-50 text-sky-600 rounded-lg hover:bg-sky-100 transition-colors text-xs font-semibold"
+                          title="Zaxira"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Zaxira</span>
+                        </button>
+                        <button
+                          onClick={() => navigate('/distributor/products/add', { state: inv.product })}
+                          className="flex items-center gap-1 px-2 py-1.5 bg-violet-50 text-violet-600 rounded-lg hover:bg-violet-100 transition-colors text-xs font-semibold"
+                          title="Tahrir"
+                        >
+                          <Pencil className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Tahrir</span>
+                        </button>
+                        <button
+                          onClick={() => setConfirmDelete({ id: inv.product?.id || inv.productId, name: inv.product?.name || '—' })}
+                          className="flex items-center gap-1 px-2 py-1.5 bg-red-50 text-red-500 rounded-lg hover:bg-red-100 transition-colors text-xs font-semibold"
+                          title="O'chirish"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> <span className="hidden lg:inline">O'chirish</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );

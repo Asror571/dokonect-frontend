@@ -15,7 +15,7 @@ import { useCartStore } from './cart.store';
 const PAYMENT_METHODS = [
   { value: 'CASH',     label: 'Naqd pul'  },
   { value: 'CARD',     label: 'Karta'     },
-  { value: 'TRANSFER', label: "O'tkazma"  },
+  { value: 'BANK_TRANSFER', label: "O'tkazma"  },
 ];
 
 const CartPage = () => {
@@ -24,7 +24,7 @@ const CartPage = () => {
 
   const [address,       setAddress]       = useState('');
   const [note,          setNote]          = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'TRANSFER'>('CASH');
+  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'BANK_TRANSFER'>('CASH');
 
   const { mutate, isPending } = useMutation({
     mutationFn: createOrderFn,

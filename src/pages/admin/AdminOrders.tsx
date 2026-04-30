@@ -22,13 +22,13 @@ const AdminOrders = () => {
   const { data, isLoading } = useQuery({
     queryKey: ['admin-orders', status, page],
     queryFn: async () => {
-      const res = await api.get(`/admin/orders?status=${status}&page=${page}`);
-      return res.data.data;
+      const res = await api.get(`/api/admin/orders`, { params: { status, page } });
+      return res.data;
     },
   });
 
-  const orders = data?.orders || [];
-  const total  = data?.total || 0;
+  const orders = Array.isArray(data) ? data : (data?.orders || []);
+  const total  = data?.total ?? orders.length;
   const totalPages = Math.ceil(total / 20);
 
   return (

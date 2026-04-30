@@ -20,7 +20,7 @@ export interface ProductPayload {
   unit?: string;
   categoryId?: string;
   brandId?: string;
-  status?: 'ACTIVE' | 'INACTIVE' | 'DRAFT';
+  status?: 'ACTIVE' | 'DRAFT' | 'OUT_OF_STOCK';
   discountType?: 'PERCENT' | 'FIXED';
   discountValue?: number;
   youtubeUrl?: string;

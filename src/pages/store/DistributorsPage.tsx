@@ -49,7 +49,7 @@ const DistributorsPage = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Distribyutorlar</h1>
+          <h1 className="text-xl sm:text-3xl font-black text-slate-900 tracking-tight">Distribyutorlar</h1>
           <p className="text-slate-500 font-medium mt-1">Yangi hamkorlar toping va mahsulotlariga ulaning.</p>
         </div>
         <div className="text-sm text-slate-500">
@@ -69,7 +69,7 @@ const DistributorsPage = () => {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <div className="md:w-64 relative">
+        <div className="w-full md:w-64 relative">
           <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
           <select
             className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500/20 font-medium appearance-none outline-none"

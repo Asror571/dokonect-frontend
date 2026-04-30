@@ -10,7 +10,7 @@ import { getProductAlertsFn, checkProductAlertsFn, markAlertAsReadFn } from '../
 import { useAuthStore } from '../../store/authStore';
 import SalesChart from '../../components/analytics/SalesChart';
 import { Badge } from '../../components/ui/Badge';
-import { getDistributorDashboardFn, getDistributorOrdersFn } from '../../api/ distributor.api';
+import { getDistributorDashboardFn, getDistributorOrdersFn } from '../../api/distributor.api';
 
 export const DistributorDashboard: React.FC = () => {
   const { user }    = useAuthStore();

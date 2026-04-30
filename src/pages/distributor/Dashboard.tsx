@@ -5,7 +5,7 @@ import { DollarSign, ShoppingBag, AlertTriangle, Users, Package, ArrowRight, Plu
 import { Badge } from '../../components/ui/Badge';
 import { format } from 'date-fns';
 import { uz } from 'date-fns/locale';
-import { getDistributorDashboardFn, getDistributorOrdersFn } from '../../api/ distributor.api';
+import { getDistributorDashboardFn, getDistributorOrdersFn } from '../../api/distributor.api';
 
 const ORDER_STATUS_LIST = [
   { key: 'new',        label: 'Yangi',          color: 'bg-blue-50   text-blue-600'   },

@@ -150,26 +150,26 @@ export const DistributorDashboard: React.FC = () => {
         {[
           {
             label: 'Bugungi tushum',
-            value: `${(stats.todaySales?.amount || stats.todaySales || 0).toLocaleString('uz-UZ')} UZS`,
+            value: `${(stats.revenue || 0).toLocaleString('uz-UZ')} UZS`,
             icon: DollarSign, bg: 'bg-emerald-50', c: 'text-emerald-500',
           },
           {
-            label: 'Faol buyurtmalar',
-            value: `${stats.orders?.inProgress || stats.orderStats?.new || 0} ta`,
+            label: 'Yangi buyurtmalar',
+            value: `${stats.incomingOrders || 0} ta`,
             icon: Package, bg: 'bg-sky-50', c: 'text-sky-500',
           },
           {
-            label: 'Kam qolganlar',
-            value: `${stats.lowStockAlerts || stats.lowStockCount || 0} tur`,
+            label: 'Tayyorlanmoqda',
+            value: `${stats.readyOrders || 0} ta`,
             icon: AlertTriangle, bg: 'bg-amber-50', c: 'text-amber-500',
-            onClick: () => navigate('/distributor/inventory'),
+            onClick: () => navigate('/distributor/orders'),
           },
           {
-            label: "O'sish",
-            value: `${growth > 0 ? '+' : ''}${growth.toFixed(1)}%`,
+            label: "Yetkazilayotgan",
+            value: `${stats.shippedOrders || 0} ta`,
             icon: TrendingUp,
-            bg: growth >= 0 ? 'bg-green-50' : 'bg-red-50',
-            c:  growth >= 0 ? 'text-green-500' : 'text-red-500',
+            bg: 'bg-green-50',
+            c: 'text-green-500',
           },
         ].map((card) => (
           <div

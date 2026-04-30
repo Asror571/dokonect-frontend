@@ -23,10 +23,14 @@ import PricingPage from './pages/distributor/PricingPage';
 // Store Pages
 import StoreDashboard from './pages/store/StoreDashboard';
 import StoreOrdersPage from './pages/store/StoreOrdersPage';
+import StoreOrderDetailPage from './pages/store/StoreOrderDetailPage';
 import CatalogPage from './pages/store/CatalogPage';
+import CartPage from './pages/store/CartPage';
 import DistributorsPage from './pages/store/DistributorsPage';
 import FinancePage from './pages/store/FinancePage';
+import StoreChatPage from './pages/store/ChatPage';
 import CategoriesPage from './pages/distributor/CategoriesPage';
+import ConnectionRequestsPage from './pages/distributor/ConnectionRequestsPage';
 
 // Admin Pages
 import AdminLayout from './components/layout/AdminLayout';
@@ -107,7 +111,8 @@ function App() {
           <Route path="/distributor/pricing"   element={<ProtectedRoute roles={['DISTRIBUTOR', 'ADMIN']}><PricingPage /></ProtectedRoute>} />
           <Route path="/distributor/chat"      element={<ProtectedRoute roles={['DISTRIBUTOR', 'ADMIN']}><DistributorChatPage /></ProtectedRoute>} />
           <Route path="/distributor/settings"  element={<ProtectedRoute roles={['DISTRIBUTOR', 'ADMIN']}><SettingsPage /></ProtectedRoute>} />
-          <Route path="/distributor/categories" element={<ProtectedRoute roles={['DISTRIBUTOR', 'ADMIN']}><CategoriesPage /></ProtectedRoute>} />
+          <Route path="/distributor/categories"   element={<ProtectedRoute roles={['DISTRIBUTOR', 'ADMIN']}><CategoriesPage /></ProtectedRoute>} />
+          <Route path="/distributor/connections"  element={<ProtectedRoute roles={['DISTRIBUTOR', 'ADMIN']}><ConnectionRequestsPage /></ProtectedRoute>} />
 
         </Route>
 
@@ -127,9 +132,12 @@ function App() {
           {/* ── STORE / CLIENT ── */}
           <Route path="/store/dashboard"    element={<ProtectedRoute roles={['CLIENT', 'STORE', 'ADMIN']}><StoreDashboard /></ProtectedRoute>} />
           <Route path="/store/orders"       element={<ProtectedRoute roles={['CLIENT', 'STORE', 'ADMIN']}><StoreOrdersPage /></ProtectedRoute>} />
+          <Route path="/store/orders/:id"   element={<ProtectedRoute roles={['CLIENT', 'STORE', 'ADMIN']}><StoreOrderDetailPage /></ProtectedRoute>} />
           <Route path="/store/catalog"      element={<ProtectedRoute roles={['CLIENT', 'STORE', 'ADMIN']}><CatalogPage /></ProtectedRoute>} />
+          <Route path="/store/cart"         element={<ProtectedRoute roles={['CLIENT', 'STORE', 'ADMIN']}><CartPage /></ProtectedRoute>} />
           <Route path="/store/distributors" element={<ProtectedRoute roles={['CLIENT', 'STORE', 'ADMIN']}><DistributorsPage /></ProtectedRoute>} />
           <Route path="/store/finance"      element={<ProtectedRoute roles={['CLIENT', 'STORE', 'ADMIN']}><FinancePage /></ProtectedRoute>} />
+          <Route path="/store/chat"         element={<ProtectedRoute roles={['CLIENT', 'STORE', 'ADMIN']}><StoreChatPage /></ProtectedRoute>} />
 
         </Route>
 

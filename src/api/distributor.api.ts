@@ -62,6 +62,28 @@ export const getDistributorStockLogsFn = async () => {
   return response.data;
 };
 
+// ─── Connection Requests ──────────────────────────────────────────────────────
+
+// GET /api/distributor/connections
+export const getConnectionRequestsFn = async () => {
+  const response = await api.get('/api/distributor/connections');
+  return response.data;
+};
+
+// PATCH /api/distributor/connections/:linkId  { action: 'APPROVED' | 'REJECTED' }
+export const respondToConnectionFn = async ({
+  linkId,
+  action,
+}: {
+  linkId: string;
+  action: 'APPROVED' | 'REJECTED';
+}) => {
+  const response = await api.patch(`/api/distributor/connections/${linkId}`, { action });
+  return response.data;
+};
+
+// ─── Stock ────────────────────────────────────────────────────────────────────
+
 // PATCH /api/distributor/products/:productId/stock
 export const updateDistributorProductStockFn = async ({
   productId,

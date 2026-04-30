@@ -38,7 +38,7 @@ export function useChatRooms() {
   return useQuery<ChatRoom[]>({
     queryKey: ['chat-rooms'],
     queryFn: async () => {
-      const res = await api.get('/chat/rooms');
+      const res = await api.get('/api/chat/rooms');
       return res.data.data || [];
     },
   });
@@ -55,7 +55,7 @@ export function useChatRoom(roomId: string | null) {
     queryKey: ['chat-messages', roomId],
     queryFn: async () => {
       if (!roomId) return [];
-      const res = await api.get(`/chat/rooms/${roomId}/messages`);
+      const res = await api.get(`/api/chat/rooms/${roomId}/messages`);
       return res.data.data?.messages || [];
     },
     enabled: !!roomId,
@@ -81,7 +81,7 @@ export function useChatRoom(roomId: string | null) {
     socket.emit('join_room', { roomId });
 
     // Mark messages as read via API
-    api.patch(`/chat/rooms/${roomId}/read`).catch(() => {});
+    api.patch(`/api/chat/rooms/${roomId}/read`).catch(() => {});
 
     const onNewMessage = ({ message }: { message: Message }) => {
       setMessages((prev) => [...prev, message]);
@@ -129,7 +129,7 @@ export function useCreateChatRoom() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ storeOwnerId, distributorId }: { storeOwnerId?: string; distributorId?: string }) => {
-      const res = await api.post('/chat/rooms', { storeOwnerId, distributorId });
+      const res = await api.post('/api/chat/rooms', { storeOwnerId, distributorId });
       return res.data.data;
     },
     onSuccess: () => {

@@ -1,17 +1,39 @@
 import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../store/authStore';
-import { Bell, Search, Globe, ChevronDown, User, LogOut, Settings, Shield, Zap, Menu } from 'lucide-react';
+import { Bell, Search, Globe, ChevronDown, User, LogOut, Settings, Shield, Menu } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { getNotificationsFn, markNotificationReadFn, markAllNotificationsReadFn } from '../../api/notifications.api';
+
+const ROLE_LABELS: Record<string, string> = {
+  ADMIN: 'Admin', DISTRIBUTOR: 'Distribyutor', CLIENT: "Do'kon egasi", STORE: "Do'kon egasi",
+};
 
 const Topbar = ({ onMenuClick }: { onMenuClick?: () => void } = {}) => {
   const { user, logout } = useAuthStore();
+  const queryClient = useQueryClient();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
-  const notifications = [
-    { id: 1, title: 'Yangi buyurtma', body: '#ORD-9283 keldi', time: '2 daq oldin', icon: Zap, color: 'text-amber-500' },
-    { id: 2, title: 'Chat xabari', body: 'Alisher: "Mahsulot qachon keladi?"', time: '10 daq oldin', icon: Globe, color: 'text-sky-500' },
-  ];
+  const { data: notifData } = useQuery({
+    queryKey: ['notifications'],
+    queryFn: getNotificationsFn,
+    staleTime: 30_000,
+    retry: false,
+  });
+
+  const { mutate: markRead } = useMutation({
+    mutationFn: markNotificationReadFn,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+  });
+
+  const { mutate: markAllRead } = useMutation({
+    mutationFn: markAllNotificationsReadFn,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+  });
+
+  const notifications: any[] = notifData?.data || notifData || [];
+  const unreadCount = notifications.filter((n: any) => !n.isRead).length;
 
   return (
     <header className="h-16 bg-white border-b border-slate-200 sticky top-0 z-40 px-6 sm:px-8 flex items-center justify-between shadow-sm backdrop-blur-md bg-white/80">
@@ -50,7 +72,11 @@ const Topbar = ({ onMenuClick }: { onMenuClick?: () => void } = {}) => {
             className={`p-2.5 rounded-xl transition-all relative ${showNotifications ? 'bg-indigo-50 text-indigo-600 scale-110' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'}`}
           >
             <Bell className="w-5 h-5" />
-            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 border-2 border-white rounded-full animate-ping" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-4.5 h-4.5 bg-red-500 border-2 border-white rounded-full text-[9px] font-black text-white flex items-center justify-center px-0.5">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
           </button>
 
           <AnimatePresence>
@@ -65,21 +91,30 @@ const Topbar = ({ onMenuClick }: { onMenuClick?: () => void } = {}) => {
                   <span className="text-sm font-black text-slate-800 uppercase tracking-widest">Bildirishnomalar</span>
                   <span className="text-[10px] bg-red-50 text-red-500 px-2 py-0.5 rounded-lg font-bold">YANGI</span>
                 </div>
-                <div className="divide-y divide-slate-50 max-h-[400px] overflow-y-auto">
-                  {notifications.map(n => (
-                    <div key={n.id} className="p-4 hover:bg-slate-50 transition-colors cursor-pointer flex gap-3 group">
-                      <div className={`w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform ${n.color}`}>
-                        <n.icon className="w-5 h-5" />
-                      </div>
+                <div className="divide-y divide-slate-50 max-h-96 overflow-y-auto">
+                  {notifications.length === 0 && (
+                    <p className="px-4 py-8 text-center text-xs text-slate-400 font-medium">Bildirishnomalar yo'q</p>
+                  )}
+                  {notifications.map((n: any) => (
+                    <div
+                      key={n.id}
+                      onClick={() => !n.isRead && markRead(n.id)}
+                      className={`p-4 hover:bg-slate-50 transition-colors cursor-pointer flex gap-3 group ${!n.isRead ? 'bg-indigo-50/40' : ''}`}
+                    >
+                      <div className="w-2 h-2 rounded-full bg-indigo-500 mt-2 shrink-0 opacity-0 transition-opacity" style={{ opacity: n.isRead ? 0 : 1 }} />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{n.title}</p>
-                        <p className="text-xs text-slate-500 truncate mt-0.5">{n.body}</p>
-                        <p className="text-[10px] text-slate-400 mt-2 font-medium">{n.time}</p>
+                        <p className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{n.title || n.type}</p>
+                        <p className="text-xs text-slate-500 truncate mt-0.5">{n.message || n.body}</p>
+                        <p className="text-[10px] text-slate-400 mt-1 font-medium">{n.createdAt ? new Date(n.createdAt).toLocaleString('uz-UZ') : ''}</p>
                       </div>
                     </div>
                   ))}
                 </div>
-                <button className="w-full py-3 text-xs font-black text-indigo-600 hover:bg-indigo-50 border-t border-slate-100 tracking-widest uppercase transition-colors">Barchasini ko'rish</button>
+                {unreadCount > 0 && (
+                  <button onClick={() => markAllRead()} className="w-full py-3 text-xs font-black text-indigo-600 hover:bg-indigo-50 border-t border-slate-100 tracking-widest uppercase transition-colors">
+                    Barchasini o'qildi deb belgilash
+                  </button>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -99,7 +134,7 @@ const Topbar = ({ onMenuClick }: { onMenuClick?: () => void } = {}) => {
             </div>
             <div className="hidden sm:block text-left mr-2">
               <p className="text-[11px] font-black text-slate-900 leading-none truncate max-w-[100px] uppercase tracking-tighter">{user?.name}</p>
-              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">Admin</p>
+              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">{ROLE_LABELS[user?.role || ''] || user?.role}</p>
             </div>
             <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${showProfileMenu ? 'rotate-180 text-indigo-500' : ''}`} />
           </button>

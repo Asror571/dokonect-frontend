@@ -11,7 +11,7 @@ export interface OrderItem {
 export interface CreateOrderPayload {
   distributorId: string;
   items: OrderItem[];
-  deliveryAddress?: Record<string, any>;
+  deliveryAddress?: string | Record<string, any>;
   deliveryTimeSlot?: string;
   notes?: string;
   deliveryFee?: number;

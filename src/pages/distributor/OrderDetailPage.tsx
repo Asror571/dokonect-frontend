@@ -97,7 +97,7 @@ const OrderDetailPage = () => {
 
   const deliveryAddr = typeof order.deliveryAddress === 'object'
     ? order.deliveryAddress?.street || order.deliveryAddress?.address || JSON.stringify(order.deliveryAddress)
-    : order.address || '—';
+    : order.deliveryAddress || '—';
 
   return (
     <div className="fade-in space-y-6 max-w-5xl mx-auto pb-12">
@@ -115,7 +115,9 @@ const OrderDetailPage = () => {
             Buyurtma #{order.id?.slice(-8).toUpperCase()}
           </h1>
           <p className="text-slate-500 text-sm mt-0.5">
-            {format(new Date(order.createdAt), 'dd MMM yyyy, HH:mm', { locale: uz })}
+            {order.createdAt
+              ? format(new Date(order.createdAt), 'dd MMM yyyy, HH:mm', { locale: uz })
+              : '—'}
           </p>
         </div>
         <Badge variant={statusInfo?.variant as any}>{statusInfo?.label || order.status}</Badge>
@@ -210,7 +212,9 @@ const OrderDetailPage = () => {
                       )}
                     </div>
                     <span className="text-xs text-slate-400">
-                      {format(new Date(log.createdAt), 'dd MMM HH:mm', { locale: uz })}
+                      {(log.timestamp || log.createdAt)
+                        ? format(new Date(log.timestamp || log.createdAt), 'dd MMM HH:mm', { locale: uz })
+                        : '—'}
                     </span>
                   </div>
                 ))}

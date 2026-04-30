@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -7,6 +7,17 @@ import { useLocation, Outlet } from 'react-router-dom';
 const AppLayout: React.FC = () => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(() => window.matchMedia('(min-width: 1024px)').matches);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  const marginLeft = isDesktop ? (collapsed ? 64 : 256) : 0;
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
@@ -24,9 +35,9 @@ const AppLayout: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Desktop sidebar — always visible */}
+      {/* Desktop sidebar */}
       <div className="hidden lg:block">
-        <Sidebar />
+        <Sidebar collapsed={collapsed} onToggleCollapse={() => setCollapsed((v) => !v)} />
       </div>
 
       {/* Mobile sidebar — slide in */}
@@ -45,7 +56,10 @@ const AppLayout: React.FC = () => {
       </AnimatePresence>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col min-w-0 lg:ml-64 overflow-hidden relative">
+      <div
+        className="flex-1 flex flex-col min-w-0 overflow-hidden transition-[margin] duration-300"
+        style={{ marginLeft }}
+      >
         <Topbar onMenuClick={() => setSidebarOpen(true)} />
 
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar bg-slate-50/50 relative z-0">
@@ -59,9 +73,6 @@ const AppLayout: React.FC = () => {
             <Outlet />
           </motion.div>
         </main>
-
-        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 blur-[100px] pointer-events-none rounded-full -mr-16 -mt-16" />
-        <div className="absolute bottom-0 left-0 w-32 h-32 bg-sky-500/5 blur-[100px] pointer-events-none rounded-full -ml-16 -mb-16" />
       </div>
     </div>
   );

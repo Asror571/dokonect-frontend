@@ -7,36 +7,43 @@ import { Button } from '../../components/ui/Button';
 import toast from 'react-hot-toast';
 
 import { getClientProductsFn } from '../../api/client.api';
+import { getProductCategoriesFn } from '../../api/product.api';
 
 const LIMIT = 12;
 
 const CatalogPage = () => {
-  const [search,   setSearch]   = useState('');
-  const [category, setCategory] = useState('');
-  const [sortBy,   setSortBy]   = useState('newest');
-  const [page,     setPage]     = useState(1);
+  const [search,     setSearch]     = useState('');
+  const [categoryId, setCategoryId] = useState('');
+  const [sortBy,     setSortBy]     = useState('newest');
+  const [page,       setPage]       = useState(1);
+
+  // Barcha kategoriyalarni alohida yuklash
+  const { data: categoriesData } = useQuery({
+    queryKey: ['catalog-categories'],
+    queryFn: () => getProductCategoriesFn(''),
+    staleTime: 300_000,
+  });
+  const categories: any[] = (Array.isArray(categoriesData) ? categoriesData : categoriesData?.data || []);
 
   const { data: fetchRes, isLoading } = useQuery({
-    queryKey: ['client-catalog', search, category, sortBy, page],
+    queryKey: ['client-catalog', search, categoryId, sortBy, page],
     queryFn: () =>
       getClientProductsFn({
-        search:   search   || undefined,
-        category: category || undefined,
+        search:     search     || undefined,
+        categoryId: categoryId || undefined,
+        sort:       sortBy !== 'newest' ? sortBy : undefined,
         page,
         limit: LIMIT,
-      }),
+      } as any),
     staleTime: 30_000,
   });
 
-  const { items, addItem } = useCartStore();
+  const { items, addItem, removeItem, updateQuantity } = useCartStore();
 
-  const catalogData  = fetchRes?.data || fetchRes || {};
+  const catalogData     = fetchRes?.data || fetchRes || {};
   const products: any[] = catalogData.products || catalogData.items || [];
   const total: number   = catalogData.total || catalogData.pagination?.total || 0;
   const totalPages      = Math.ceil(total / LIMIT);
-
-  // Kategoriyalarni mahsulotlardan olish
-  const categories: string[] = [...new Set(products.map((p: any) => p.category?.name || p.category).filter(Boolean))];
 
   const handleAddToCart = (product: any) => {
     addItem({
@@ -48,19 +55,8 @@ const CatalogPage = () => {
     toast.success(`${product.name} savatga qo'shildi`, { icon: '🛍️' });
   };
 
-  const hasFilters = search || category || sortBy !== 'newest';
-
-  // Client side sort
-  const sortedProducts = [...products].sort((a, b) => {
-    if (sortBy === 'price_asc')  return (a.wholesalePrice || a.price || 0) - (b.wholesalePrice || b.price || 0);
-    if (sortBy === 'price_desc') return (b.wholesalePrice || b.price || 0) - (a.wholesalePrice || a.price || 0);
-    return 0;
-  });
-
-  const filteredProducts = sortedProducts.filter((p: any) => {
-    const matchCat = !category || p.category?.name === category || p.category === category;
-    return matchCat;
-  });
+  const hasFilters = search || categoryId || sortBy !== 'newest';
+  const filteredProducts = products;
 
   return (
     <div className="page fade-in max-w-7xl mx-auto pb-12">
@@ -90,15 +86,17 @@ const CatalogPage = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <div className="relative flex-1 min-w-35">
-              <SlidersHorizontal className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <div className="relative flex-1 min-w-48">
+              <SlidersHorizontal className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               <select
-                value={category}
-                onChange={(e) => { setCategory(e.target.value); setPage(1); }}
+                value={categoryId}
+                onChange={(e) => { setCategoryId(e.target.value); setPage(1); }}
                 className="w-full pl-11 pr-8 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-700 appearance-none focus:ring-2 focus:ring-indigo-500/20 outline-none"
               >
-                <option value="">Barcha Kategoriyalar</option>
-                {categories.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
+                <option value="">Kategoriyalar</option>
+                {categories.map((cat: any) => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
               </select>
             </div>
             <select
@@ -116,7 +114,7 @@ const CatalogPage = () => {
         {hasFilters && (
           <div className="flex items-center justify-between border-t border-slate-100 pt-4">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Filtrlar faol</p>
-            <button onClick={() => { setSearch(''); setCategory(''); setSortBy('newest'); setPage(1); }} className="text-xs font-black text-indigo-600 hover:text-indigo-700 uppercase tracking-widest">
+            <button onClick={() => { setSearch(''); setCategoryId(''); setSortBy('newest'); setPage(1); }} className="text-xs font-black text-indigo-600 hover:text-indigo-700 uppercase tracking-widest">
               Tozalash
             </button>
           </div>
@@ -146,9 +144,16 @@ const CatalogPage = () => {
               return (
                 <ProductCard
                   key={product.id}
-                  product={{ ...product, price: product.wholesalePrice || product.price }}
+                  product={{
+                    ...product,
+                    price: product.wholesalePrice || product.price,
+                    category: product.category?.name || product.category || '',
+                    imageUrl: product.imageUrl || product.images?.[0]?.url || product.images?.[0] || null,
+                  }}
                   type="STORE_OWNER"
                   onAddCart={handleAddToCart}
+                  onRemoveCart={removeItem}
+                  onUpdateQuantity={updateQuantity}
                   cartQuantity={cartItem?.quantity}
                 />
               );

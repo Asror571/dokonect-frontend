@@ -19,7 +19,7 @@ const CartPage = () => {
     onSuccess: () => {
       toast.success('Buyurtma qabul qilindi!');
       clearCart();
-      navigate('/orders');
+      navigate('/store/orders');
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Xatolik yuz berdi');
@@ -37,8 +37,8 @@ const CartPage = () => {
 
     mutate({
       distributorId: items[0].distributorId,
-      address,
-      note,
+      deliveryAddress: address,
+      notes: note,
       items: items.map(i => ({ productId: i.productId, quantity: i.quantity })),
     });
   };
@@ -81,7 +81,7 @@ const CartPage = () => {
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-slate-800 text-sm truncate">{item.name}</h3>
                 <p className="text-violet-600 font-semibold text-sm mt-0.5">
-                  {item.price.toLocaleString('uz-UZ')} UZS
+                  {(item.price || 0).toLocaleString('uz-UZ')} UZS
                 </p>
                 <div className="flex items-center gap-2 mt-2">
                   <div className="flex items-center gap-1 bg-slate-50 rounded-lg p-0.5 border border-slate-200">
@@ -113,7 +113,7 @@ const CartPage = () => {
                   <Trash2 className="w-4 h-4" />
                 </button>
                 <span className="text-sm font-bold text-slate-800">
-                  {(item.price * item.quantity).toLocaleString('uz-UZ')}
+                  {((item.price || 0) * (item.quantity || 1)).toLocaleString('uz-UZ')}
                 </span>
               </div>
             </div>

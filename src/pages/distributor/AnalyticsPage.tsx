@@ -254,7 +254,7 @@ const AnalyticsPage = () => {
           <h3 className="text-lg font-black text-slate-900 mb-8 border-b pb-4 flex items-center gap-3 uppercase tracking-widest">
             <TrendingUp className="w-5 h-5 text-indigo-500" /> Savdo Dinamikasi
           </h3>
-          <div className="h-[300px]">
+          <div className="h-[300px] min-h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={salesData}>
                 <defs>
@@ -277,7 +277,7 @@ const AnalyticsPage = () => {
           <h3 className="text-lg font-black text-slate-900 mb-8 border-b pb-4 flex items-center gap-3 uppercase tracking-widest">
             <ShoppingBag className="w-5 h-5 text-amber-500" /> Eng Ko'p Sotilgan
           </h3>
-          <div className="h-[300px]">
+          <div className="h-[300px] min-h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={topProducts} layout="vertical" margin={{ left: 50 }}>
                 <XAxis type="number" hide />

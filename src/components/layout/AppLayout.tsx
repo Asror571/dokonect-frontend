@@ -3,8 +3,10 @@ import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation, Outlet } from 'react-router-dom';
+import { useSocket } from '../../hooks/useSocket';
 
 const AppLayout: React.FC = () => {
+  useSocket(); // barcha sahifalarda socket ulanishi
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);

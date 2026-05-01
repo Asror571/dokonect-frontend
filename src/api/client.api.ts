@@ -42,6 +42,12 @@ export const getClientDistributorsFn = async (params: ClientDistributorsParams) 
   return response.data;
 };
 
+// GET /api/client/distributors/:distributorId
+export const getClientDistributorByIdFn = async (distributorId: string) => {
+  const response = await api.get(`/api/client/distributors/${distributorId}`);
+  return response.data;
+};
+
 // POST /api/client/distributors/:distributorId/connect
 export const connectDistributorFn = async (distributorId: string) => {
   const response = await api.post(`/api/client/distributors/${distributorId}/connect`);

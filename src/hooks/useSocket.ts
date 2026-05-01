@@ -18,22 +18,23 @@ export const useSocket = () => {
 
     socket = io(SOCKET_URL, {
       auth: { token },
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
+      reconnectionAttempts: 5,
+      reconnectionDelay: 2000,
     });
 
     socket.on('connect', () => {
-      console.log('✅ Socket connected');
-      socket?.emit('join:user', user.id);
-
-      if (user.role === 'DRIVER' && user.driverId) {
-        socket?.emit('join:driver', user.driverId);
-      } else if (user.role === 'DISTRIBUTOR' && user.distributorId) {
+      if (user.role === 'DISTRIBUTOR' && user.distributorId) {
         socket?.emit('join:distributor', user.distributorId);
+      } else if (user.role === 'CLIENT' && user.clientId) {
+        socket?.emit('join:client', user.clientId);
+      } else if (user.role === 'DRIVER' && user.driverId) {
+        socket?.emit('join:driver', user.driverId);
       }
     });
 
-    socket.on('connect_error', (err) => {
-      console.log('❌ Socket error:', err.message);
+    socket.on('connect_error', () => {
+      // Backend yoqilmagan bo'lsa silent fail
     });
 
     // Yangi buyurtma (Distributor)
@@ -100,7 +101,8 @@ export const useOrderSocket = () => {
 
     const s = io(SOCKET_URL, {
       auth: { token },
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
+      reconnectionAttempts: 5,
     });
 
     s.on('order:new', () => {

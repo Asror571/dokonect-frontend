@@ -8,20 +8,18 @@ import {
   createCategoryFn,
   updateCategoryFn,
   deleteCategoryFn,
+  type CategoryCreatePayload,
 } from '../../api/categories.api';
 import { useAuthStore } from '../../store/authStore';
 
 interface CategoryForm {
   name: string;
-  slug: string;
   parentId: string;
   icon: string;
 }
 
-const emptyForm: CategoryForm = { name: '', slug: '', parentId: '', icon: '' };
+const emptyForm: CategoryForm = { name: '', parentId: '', icon: '' };
 
-const slugify = (text: string) =>
-  text.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
 const CategoriesPage = () => {
   const queryClient = useQueryClient();
@@ -46,14 +44,12 @@ const CategoriesPage = () => {
 
   // ── Create ────────────────────────────────────────────────────────────────
   const { mutate: createCat, isPending: creating } = useMutation({
-    mutationFn: () =>
-      createCategoryFn({
-        name:          form.name,
-        slug:          form.slug || slugify(form.name),
-        distributorId,
-        parentId:      form.parentId || undefined,
-        icon:          form.icon    || undefined,
-      }),
+    mutationFn: () => {
+      const payload: CategoryCreatePayload = { name: form.name };
+      if (form.parentId) payload.parentId = form.parentId;
+      if (form.icon)     payload.icon     = form.icon;
+      return createCategoryFn(payload);
+    },
     onSuccess: () => {
       toast.success("Kategoriya qo'shildi");
       queryClient.invalidateQueries({ queryKey: ['categories'] });
@@ -68,10 +64,9 @@ const CategoriesPage = () => {
       updateCategoryFn({
         id:   editingCat.id,
         data: {
-          name:     form.name,
-          slug:     form.slug || slugify(form.name),
+          name:     form.name     || undefined,
           parentId: form.parentId || undefined,
-          icon:     form.icon    || undefined,
+          icon:     form.icon     || undefined,
         },
       }),
     onSuccess: () => {
@@ -102,7 +97,7 @@ const CategoriesPage = () => {
 
   const openEdit = (cat: any) => {
     setEditingCat(cat);
-    setForm({ name: cat.name, slug: cat.slug, parentId: cat.parentId || '', icon: cat.icon || '' });
+    setForm({ name: cat.name, parentId: cat.parentId || '', icon: cat.icon || '' });
     setShowModal(true);
   };
 
@@ -235,26 +230,10 @@ const CategoriesPage = () => {
                 <label className="block text-xs font-semibold text-slate-600 mb-1.5">Nomi *</label>
                 <input
                   value={form.name}
-                  onChange={(e) => setForm((p) => ({
-                    ...p,
-                    name: e.target.value,
-                    slug: p.slug || slugify(e.target.value),
-                  }))}
+                  onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
                   placeholder="Masalan: Elektronika"
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400"
                 />
-              </div>
-
-              {/* Slug */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1.5">Slug</label>
-                <input
-                  value={form.slug}
-                  onChange={(e) => setForm((p) => ({ ...p, slug: slugify(e.target.value) }))}
-                  placeholder="elektronika"
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400"
-                />
-                <p className="text-[11px] text-slate-400 mt-1">Bo'sh qoldirsangiz avtomatik yaratiladi</p>
               </div>
 
               {/* Icon */}

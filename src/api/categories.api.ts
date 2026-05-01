@@ -1,12 +1,18 @@
 import api from './api';
 
-export interface CategoryPayload {
+export interface CategoryCreatePayload {
   name: string;
-  slug: string;
-  distributorId: string;
   parentId?: string;
-  image?: string;
   icon?: string;
+  image?: string;
+  order?: number;
+}
+
+export interface CategoryUpdatePayload {
+  name?: string;
+  parentId?: string;
+  icon?: string;
+  image?: string;
   order?: number;
 }
 
@@ -16,8 +22,8 @@ export const getCategoriesFn = async (distributorId: string) => {
   return res.data;
 };
 
-// POST /api/categories
-export const createCategoryFn = async (data: CategoryPayload) => {
+// POST /api/categories  (distributorId auth orqali backend o'zi qo'yadi)
+export const createCategoryFn = async (data: CategoryCreatePayload) => {
   const res = await api.post('/api/categories', data);
   return res.data;
 };
@@ -34,7 +40,7 @@ export const updateCategoryFn = async ({
   data,
 }: {
   id: string;
-  data: Partial<CategoryPayload>;
+  data: CategoryUpdatePayload;
 }) => {
   const res = await api.put(`/api/categories/${id}`, data);
   return res.data;

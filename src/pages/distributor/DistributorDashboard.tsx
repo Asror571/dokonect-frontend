@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Package, AlertTriangle, TrendingUp, DollarSign, Plus, ArrowRight, Bell } from 'lucide-react';
+import { Package, AlertTriangle, TrendingUp, DollarSign, Plus, ArrowRight, Bell, Truck } from 'lucide-react';
 import { format } from 'date-fns';
 import { uz } from 'date-fns/locale';
 import toast from 'react-hot-toast';
@@ -67,7 +67,9 @@ export const DistributorDashboard: React.FC = () => {
   });
 
   const stats         = dashRes?.data || dashRes || {};
-  const recentOrders: any[] = ordersRes?.data?.orders || ordersRes?.orders || [];
+  const recentOrders: any[] = Array.isArray(ordersRes)
+    ? ordersRes
+    : ordersRes?.orders || ordersRes?.data?.orders || ordersRes?.data || [];
   const alerts: any[] = alertsData?.alerts || alertsData?.data?.alerts || [];
   const unreadCount   = alerts.length;
   const salesTrend    = stats.salesTrend || [];
@@ -136,10 +138,10 @@ export const DistributorDashboard: React.FC = () => {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Bugungi tushum',   value: `${(stats.revenue || 0).toLocaleString('uz-UZ')} UZS`, icon: DollarSign,   bg: 'bg-emerald-50', c: 'text-emerald-500' },
-          { label: 'Yangi buyurtmalar', value: `${stats.incomingOrders || 0} ta`,                     icon: Package,       bg: 'bg-sky-50',     c: 'text-sky-500'     },
-          { label: 'Tayyorlanmoqda',   value: `${stats.readyOrders || 0} ta`,                         icon: AlertTriangle, bg: 'bg-amber-50',   c: 'text-amber-500', onClick: () => navigate('/distributor/orders') },
-          { label: 'Yetkazilayotgan',  value: `${stats.shippedOrders || 0} ta`,                       icon: TrendingUp,    bg: 'bg-green-50',   c: 'text-green-500'  },
+          { label: 'Bugungi tushum',    value: `${(stats.revenue || 0).toLocaleString('uz-UZ')} UZS`, icon: DollarSign,   bg: 'bg-emerald-50', c: 'text-emerald-500' },
+          { label: 'Yangi buyurtmalar', value: `${stats.incomingOrders || 0} ta`,                     icon: Package,       bg: 'bg-sky-50',     c: 'text-sky-500',   onClick: () => navigate('/distributor/orders') },
+          { label: 'Faol haydovchilar', value: `${stats.activeDrivers || 0} ta`,                      icon: Truck,         bg: 'bg-violet-50',  c: 'text-violet-500', onClick: () => navigate('/distributor/drivers') },
+          { label: 'Yetkazilayotgan',   value: `${stats.shippedOrders || 0} ta`,                      icon: TrendingUp,    bg: 'bg-green-50',   c: 'text-green-500'  },
         ].map((card) => (
           <div key={card.label} onClick={(card as any).onClick}
             className={`bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow ${(card as any).onClick ? 'cursor-pointer' : ''}`}>
@@ -178,7 +180,9 @@ export const DistributorDashboard: React.FC = () => {
                   className="flex flex-col p-3.5 rounded-xl bg-slate-50 border border-slate-100 hover:bg-slate-100 transition-colors cursor-pointer">
                   <div className="flex items-center justify-between mb-1.5">
                     <p className="text-sm font-semibold text-slate-900">{order.client?.storeName || "Do'kon"}</p>
-                    <p className="text-xs text-slate-400">{format(new Date(order.createdAt), 'dd MMM, HH:mm', { locale: uz })}</p>
+                    <p className="text-xs text-slate-400">
+                      {order.createdAt ? format(new Date(order.createdAt), 'dd MMM, HH:mm', { locale: uz }) : '—'}
+                    </p>
                   </div>
                   <div className="flex items-end justify-between">
                     <p className="text-[13px] font-bold text-slate-700">{(order.totalAmount || 0).toLocaleString('uz-UZ')} UZS</p>

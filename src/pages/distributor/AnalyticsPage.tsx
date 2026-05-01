@@ -1,20 +1,22 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import {
   TrendingUp, ShoppingBag, Truck, Download,
-  Package, CheckCircle2, Clock, XCircle,
+  Package, CheckCircle2, Clock, XCircle, CalendarDays, X, Store,
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, BarChart, Bar, Cell,
 } from 'recharts';
+import { DayPicker, DateRange } from 'react-day-picker';
 import { getDistributorAnalyticsFn } from '../../api/analytics.api';
 import { getOrdersFn } from '../../api/order.api';
 import api from '../../api/api';
 import { Badge } from '../../components/ui/Badge';
-import { format } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { uz } from 'date-fns/locale';
+import 'react-day-picker/style.css';
 
 const COLORS = ['#6366f1', '#fbbf24', '#38bdf8', '#4ade80', '#f472b6'];
 
@@ -30,12 +32,37 @@ const STATUS_MAP: Record<string, { label: string; variant: string }> = {
 
 const AnalyticsPage = () => {
   const navigate = useNavigate();
-  const [period, setPeriod] = useState('7d');
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [modalType, setModalType] = useState<'sales' | null>(null);
+  const [range, setRange] = useState<DateRange>({
+    from: subDays(new Date(), 7),
+    to: new Date(),
+  });
+  const calendarRef = useRef<HTMLDivElement>(null);
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (calendarRef.current && !calendarRef.current.contains(e.target as Node)) {
+        setCalendarOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const fromStr = range.from ? format(range.from, 'yyyy-MM-dd') : undefined;
+  const toStr   = range.to   ? format(range.to,   'yyyy-MM-dd') : undefined;
+
+  const rangeLabel = range.from && range.to
+    ? `${format(range.from, 'd MMM', { locale: uz })} — ${format(range.to, 'd MMM yyyy', { locale: uz })}`
+    : 'Sana tanlang';
 
   // Analytics
   const { data: analyticsRes, isLoading } = useQuery({
-    queryKey: ['distributor-analytics', period],
-    queryFn: () => getDistributorAnalyticsFn(period),
+    queryKey: ['distributor-analytics', fromStr, toStr],
+    queryFn: () => getDistributorAnalyticsFn({ from: fromStr, to: toStr }),
+    enabled: !!fromStr,
     staleTime: 60_000,
     retry: false,
   });
@@ -97,13 +124,50 @@ const AnalyticsPage = () => {
           </h1>
           <p className="text-slate-500 text-sm mt-1">Biznesingizning chuqur statistikasi va tahlili.</p>
         </div>
-        <div className="flex gap-2">
-          <select value={period} onChange={(e) => setPeriod(e.target.value)}
-            className="bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500 uppercase tracking-tight">
-            <option value="7d">Oxirgi 7 kun</option>
-            <option value="30d">Oxirgi 30 kun</option>
-            <option value="90d">Oxirgi 90 kun</option>
-          </select>
+        <div className="flex gap-2 items-center">
+          {/* Date range picker */}
+          <div className="relative" ref={calendarRef}>
+            <button
+              onClick={() => setCalendarOpen(v => !v)}
+              className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 hover:border-indigo-400 transition-all outline-none focus:ring-2 focus:ring-indigo-500/30 min-w-55"
+            >
+              <CalendarDays className="w-4 h-4 text-indigo-500 shrink-0" />
+              <span>{rangeLabel}</span>
+            </button>
+
+            {calendarOpen && (
+              <div className="absolute right-0 top-12 z-50 bg-white rounded-2xl border border-slate-200 shadow-2xl shadow-slate-900/10 p-3">
+                <DayPicker
+                  mode="range"
+                  selected={range}
+                  onSelect={(r) => {
+                    if (r) { setRange(r); if (r.from && r.to) setCalendarOpen(false); }
+                  }}
+                  locale={uz}
+                  disabled={{ after: new Date() }}
+                  numberOfMonths={2}
+                  className="text-sm"
+                />
+                {/* Quick presets */}
+                <div className="flex gap-2 border-t border-slate-100 pt-2 mt-1">
+                  {[
+                    { label: '7 kun',  days: 7  },
+                    { label: '30 kun', days: 30 },
+                    { label: '90 kun', days: 90 },
+                  ].map(({ label, days }) => (
+                    <button
+                      key={days}
+                      onClick={() => { setRange({ from: subDays(new Date(), days), to: new Date() }); setCalendarOpen(false); }}
+                      className="flex-1 py-1.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-indigo-100 hover:text-indigo-700 rounded-lg transition-colors"
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           <button className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all font-bold text-sm shadow-lg shadow-indigo-600/20 uppercase tracking-widest">
             <Download className="w-4 h-4" /> Hisobot
           </button>
@@ -113,12 +177,32 @@ const AnalyticsPage = () => {
       {/* KPI cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {[
-          { label: 'Umumiy Savdo',  value: `${(stats.totalRevenue || 0).toLocaleString('uz-UZ')} UZS`, icon: TrendingUp, ring: 'bg-indigo-50',  tc: 'text-emerald-500', trend: "Daromad" },
-          { label: 'Buyurtmalar',   value: `${stats.orders?.total || allOrders.length || 0} ta`,        icon: ShoppingBag, ring: 'bg-amber-50',   tc: 'text-amber-500',   trend: 'Jami buyurtma' },
-          { label: 'Faol haydovchilar', value: `${activeDrivers.length} ta`,                           icon: Truck,       ring: 'bg-sky-50',     tc: 'text-sky-500',     trend: 'Hozir faol' },
-          { label: "O'rtacha chek", value: `${(stats.avgOrderValue || 0).toLocaleString('uz-UZ')} UZS`, icon: TrendingUp, ring: 'bg-emerald-50', tc: 'text-emerald-500', trend: 'Barqaror' },
+          {
+            label: 'Umumiy Savdo', value: `${(stats.totalRevenue || 0).toLocaleString('uz-UZ')} UZS`,
+            icon: TrendingUp, ring: 'bg-indigo-50', tc: 'text-emerald-500', trend: 'Do\'konlar bo\'yicha →',
+            onClick: () => setModalType('sales'),
+          },
+          {
+            label: 'Buyurtmalar', value: `${stats.orders?.total || allOrders.length || 0} ta`,
+            icon: ShoppingBag, ring: 'bg-amber-50', tc: 'text-amber-500', trend: 'Barchasi →',
+            onClick: () => navigate('/distributor/orders'),
+          },
+          {
+            label: 'Faol haydovchilar', value: `${activeDrivers.length} ta`,
+            icon: Truck, ring: 'bg-sky-50', tc: 'text-sky-500', trend: 'Haydovchilar →',
+            onClick: () => navigate('/distributor/drivers'),
+          },
+          {
+            label: "O'rtacha chek", value: `${(stats.avgOrderValue || 0).toLocaleString('uz-UZ')} UZS`,
+            icon: TrendingUp, ring: 'bg-emerald-50', tc: 'text-emerald-500', trend: 'Barqaror',
+            onClick: undefined,
+          },
         ].map((card) => (
-          <div key={card.label} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden group">
+          <div
+            key={card.label}
+            onClick={card.onClick}
+            className={`bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden group transition-all ${card.onClick ? 'cursor-pointer hover:shadow-lg hover:border-indigo-200 active:scale-[0.98]' : ''}`}
+          >
             <div className={`absolute top-0 right-0 w-24 h-24 ${card.ring} rounded-bl-full -mr-12 -mt-12 group-hover:scale-150 transition-transform duration-500`} />
             <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">{card.label}</p>
             <p className="text-2xl font-black text-slate-900">{card.value}</p>
@@ -128,6 +212,60 @@ const AnalyticsPage = () => {
           </div>
         ))}
       </div>
+
+      {/* ── Umumiy Savdo modal ── */}
+      {modalType === 'sales' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setModalType(null)} />
+          <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-50 flex items-center justify-center">
+                  <Store className="w-5 h-5 text-indigo-500" />
+                </div>
+                <div>
+                  <h2 className="font-black text-slate-900 text-base">Do'konlar bo'yicha savdo</h2>
+                  <p className="text-xs text-slate-400 font-semibold">{rangeLabel}</p>
+                </div>
+              </div>
+              <button onClick={() => setModalType(null)} className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 transition-colors">
+                <X className="w-4 h-4 text-slate-600" />
+              </button>
+            </div>
+
+            {/* List */}
+            <div className="overflow-y-auto flex-1 px-6 py-4 space-y-2">
+              {(stats.clientBreakdown || []).length === 0 ? (
+                <p className="text-center text-slate-400 text-sm py-8">Ma'lumot yo'q</p>
+              ) : (
+                (stats.clientBreakdown as any[]).map((client: any, i: number) => (
+                  <div key={client.clientId || i} className="flex items-center gap-4 p-3.5 bg-slate-50 rounded-2xl hover:bg-indigo-50 transition-colors">
+                    <span className="w-7 h-7 rounded-xl bg-indigo-100 text-indigo-600 text-xs font-black flex items-center justify-center shrink-0">
+                      {i + 1}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-slate-900 text-sm truncate">{client.storeName}</p>
+                      <p className="text-xs text-slate-400 font-semibold">{client.ordersCount} ta buyurtma</p>
+                    </div>
+                    <p className="text-sm font-black text-indigo-600 shrink-0">
+                      {(client.totalRevenue || 0).toLocaleString('uz-UZ')} UZS
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Footer total */}
+            <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between">
+              <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Jami</span>
+              <span className="text-base font-black text-slate-900">
+                {(stats.totalRevenue || 0).toLocaleString('uz-UZ')} UZS
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Buyurtmalar statusi + Faol haydovchilar */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

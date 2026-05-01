@@ -17,7 +17,7 @@ const registerSchema = z.object({
   name:     z.string().min(2, 'Kamida 2 belgi'),
   email:    z.string().email("Noto'g'ri email"),
   password: z.string().min(6, 'Kamida 6 belgi'),
-  role:     z.enum(['STORE', 'DISTRIBUTOR']),
+  role:     z.enum(['CLIENT', 'DISTRIBUTOR']),   // ← STORE → CLIENT
   address:  z.string().min(5, 'Manzilni kiriting'),
   phone:    z.string().min(7, 'Telefon raqam kiriting'),
 });
@@ -38,21 +38,19 @@ const RegisterPage = () => {
 
   const { mutate, isPending } = useMutation({
     mutationFn: (formData: RegisterForm) => {
-      // ── Backend ga to'g'ri format bilan yuborish ──
       const payload: any = {
         name:     formData.name,
         email:    formData.email,
         phone:    formData.phone,
         password: formData.password,
         address:  formData.address,
-        role:     formData.role,   // DISTRIBUTOR yoki STORE
+        role:     formData.role,
       };
 
-      // Role ga qarab qo'shimcha maydonlar
       if (formData.role === 'DISTRIBUTOR') {
         payload.companyName = formData.name;
       } else {
-        payload.storeName = formData.name;
+        payload.storeName = formData.name;  // CLIENT uchun
       }
 
       console.log('📤 Register payload:', payload);
@@ -60,16 +58,11 @@ const RegisterPage = () => {
     },
     onSuccess: (data) => {
       setErrorMsg('');
-      console.log('✅ Register response:', data);
-
       const user   = data.user   ?? data.data?.user   ?? data.data;
       const accTok = data.token  ?? data.accessToken  ?? data.data?.token ?? data.data?.accessToken ?? '';
       const refTok = data.refreshToken ?? data.data?.refreshToken ?? '';
 
-      if (!user?.id) {
-        setErrorMsg("Foydalanuvchi ma'lumotlari topilmadi");
-        return;
-      }
+      if (!user?.id) { setErrorMsg("Foydalanuvchi ma'lumotlari topilmadi"); return; }
 
       setAuth(
         {
@@ -88,16 +81,15 @@ const RegisterPage = () => {
 
       toast.success("Muvaffaqiyatli ro'yxatdan o'tdingiz!");
 
-      if (user.role === 'STORE')            navigate('/store/dashboard',       { replace: true });
-      else if (user.role === 'DISTRIBUTOR') navigate('/distributor/dashboard', { replace: true });
-      else if (user.role === 'DRIVER')      navigate('/driver/dashboard',      { replace: true });
-      else if (user.role === 'ADMIN')       navigate('/admin/dashboard',       { replace: true });
-      else                                  navigate('/',                       { replace: true });
+      if (user.role === 'CLIENT' || user.role === 'STORE') navigate('/store/dashboard',       { replace: true });
+      else if (user.role === 'DISTRIBUTOR')                navigate('/distributor/dashboard', { replace: true });
+      else if (user.role === 'DRIVER')                     navigate('/driver/dashboard',      { replace: true });
+      else if (user.role === 'ADMIN')                      navigate('/admin/dashboard',       { replace: true });
+      else                                                  navigate('/',                       { replace: true });
     },
     onError: (error: any) => {
       console.log('❌ Error response:', error.response?.data);
       const data = error.response?.data;
-      // message Array bo'lsa birinchisini olish
       const msg = Array.isArray(data?.message)
         ? data.message[0]
         : data?.message || data?.error || `Xatolik (${error.response?.status || 'network'})`;
@@ -134,8 +126,8 @@ const RegisterPage = () => {
               </label>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { value: 'DISTRIBUTOR', icon: Briefcase, label: 'Distribyutor' },
-                  { value: 'STORE',       icon: Store,     label: "Do'kon egasi" },
+                  { value: 'DISTRIBUTOR', icon: Briefcase, label: 'Distribyutor'  },
+                  { value: 'CLIENT',      icon: Store,     label: "Do'kon egasi"  }, // ← STORE → CLIENT
                 ].map(({ value, icon: Icon, label }) => (
                   <button key={value} type="button" onClick={() => setValue('role', value as any)}
                     className={cn(
@@ -165,23 +157,19 @@ const RegisterPage = () => {
                 {...register('name')}
               />
               <Input
-                label="Email"
-                type="email"
-                placeholder="email@example.com"
+                label="Email" type="email" placeholder="email@example.com"
                 leftIcon={<Mail className="w-4 h-4" />}
                 error={errors.email?.message}
                 {...register('email')}
               />
               <Input
-                label="Telefon"
-                placeholder="+998901234567"
+                label="Telefon" placeholder="+998901234567"
                 leftIcon={<Phone className="w-4 h-4" />}
                 error={errors.phone?.message}
                 {...register('phone')}
               />
               <Input
-                label="Manzil"
-                placeholder="Toshkent, Chilonzor"
+                label="Manzil" placeholder="Toshkent, Chilonzor"
                 leftIcon={<MapPin className="w-4 h-4" />}
                 error={errors.address?.message}
                 {...register('address')}
@@ -212,13 +200,10 @@ const RegisterPage = () => {
               {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password.message}</p>}
             </div>
 
-            {/* Xato — sahifada doimiy */}
+            {/* Xato */}
             {errorMsg && (
-              <motion.div
-                initial={{ opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3"
-              >
+              <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+                className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
                 <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
                 <p className="text-sm text-red-600 font-medium">{errorMsg}</p>
               </motion.div>

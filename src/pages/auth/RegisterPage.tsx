@@ -4,7 +4,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
-import { Mail, Lock, Store, Briefcase, User, Phone, MapPin, ArrowRight, Zap, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, Store, Briefcase, User, Phone, MapPin, ArrowRight, Zap, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { registerFn } from '../../api/auth.api';
 import { useAuthStore } from '../../store/authStore';
 import { Button } from '../../components/ui/Button';
@@ -26,6 +27,7 @@ const RegisterPage = () => {
   const navigate = useNavigate();
   const { setAuth } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
+  const [errorMsg,     setErrorMsg]     = useState('');   // ← xato state
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
@@ -37,9 +39,9 @@ const RegisterPage = () => {
   const { mutate, isPending } = useMutation({
     mutationFn: registerFn,
     onSuccess: (data) => {
+      setErrorMsg('');
       console.log('✅ Register response:', data);
 
-      // API: { user, token } yoki { data: { user, token } } yoki { data: { user, accessToken } }
       const user   = data.user   ?? data.data?.user   ?? data.data;
       const accTok = data.token  ?? data.accessToken  ?? data.data?.token ?? data.data?.accessToken ?? '';
       const refTok = data.refreshToken ?? data.data?.refreshToken ?? '';
@@ -48,7 +50,7 @@ const RegisterPage = () => {
       console.log('🔑 Token:', accTok);
 
       if (!user?.id) {
-        toast.error('Foydalanuvchi ma\'lumotlari topilmadi');
+        setErrorMsg("Foydalanuvchi ma'lumotlari topilmadi");
         return;
       }
 
@@ -78,7 +80,10 @@ const RegisterPage = () => {
     onError: (error: any) => {
       console.log('❌ Error:', error);
       console.log('❌ Error response:', error.response?.data);
-      toast.error(error.response?.data?.message || 'Xatolik yuz berdi');
+      const msg = error.response?.data?.message
+        || error.response?.data?.error
+        || `Xatolik (${error.response?.status || 'network'})`;
+      setErrorMsg(msg);   // ← sahifada ko'rsatish
     },
   });
 
@@ -102,7 +107,7 @@ const RegisterPage = () => {
             <p className="text-slate-500 text-sm">Platformaga qo'shiling</p>
           </div>
 
-          <form onSubmit={handleSubmit((d) => mutate(d))} className="space-y-4">
+          <form onSubmit={handleSubmit((d) => { setErrorMsg(''); mutate(d); })} className="space-y-4">
 
             {/* Role selector */}
             <div>
@@ -197,6 +202,18 @@ const RegisterPage = () => {
                 <p className="text-xs text-red-500 mt-1">{errors.password.message}</p>
               )}
             </div>
+
+            {/* ── Xato xabari — sahifada doimiy ── */}
+            {errorMsg && (
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3"
+              >
+                <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                <p className="text-sm text-red-600 font-medium">{errorMsg}</p>
+              </motion.div>
+            )}
 
             <Button type="submit" isLoading={isPending} className="w-full" size="lg">
               {!isPending && <>Ro'yxatdan o'tish <ArrowRight className="w-4 h-4 ml-1.5" /></>}

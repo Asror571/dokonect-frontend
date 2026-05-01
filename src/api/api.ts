@@ -7,16 +7,12 @@ const api = axios.create({
   },
 });
 
-console.log('🌐 API mode:', import.meta.env.VITE_API_URL || 'Vercel proxy (/api/...)');
-
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('accessToken');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-
   console.log('📡 Request:', config.method?.toUpperCase(), (config.baseURL ?? '') + (config.url ?? ''));
-
   return config;
 });
 
@@ -26,11 +22,18 @@ api.interceptors.response.use(
     console.log('❌ Response error:', error.response?.status, error.config?.url);
 
     const originalRequest = error.config;
+    const url = originalRequest?.url ?? '';
+
+    // ← Login va Register da interceptor ishlamasin — xato to'g'ri catch ga ketsin
+    const isAuthEndpoint =
+      url.includes('/auth/login') ||
+      url.includes('/auth/register');
 
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
-      !originalRequest.url?.includes('/auth/refresh-token')
+      !url.includes('/auth/refresh-token') &&
+      !isAuthEndpoint   // ← asosiy tuzatish
     ) {
       originalRequest._retry = true;
       try {

@@ -17,20 +17,24 @@ export const DistributorDashboard: React.FC = () => {
   const navigate    = useNavigate();
   const queryClient = useQueryClient();
 
-  // ── Dashboard stats ───────────────────────────────────────────────────────
+  // ── Dashboard stats — 30 sekundda yangilanadi ─────────────────────────────
   const { data: dashRes, isLoading: dashLoading } = useQuery({
     queryKey: ['distributor-dashboard'],
     queryFn: getDistributorDashboardFn,
-    staleTime: 30_000,
-    retry: false,           // ← 500 da qayta urinmaslik
+    staleTime: 15_000,
+    retry: false,
+    refetchInterval: 30_000,              // ← polling
+    refetchIntervalInBackground: true,
   });
 
-  // ── Recent orders ─────────────────────────────────────────────────────────
+  // ── Recent orders — 15 sekundda yangilanadi ───────────────────────────────
   const { data: ordersRes, isLoading: ordersLoading } = useQuery({
     queryKey: ['distributor-recent-orders'],
     queryFn: () => getDistributorOrdersFn({ limit: 5 } as any),
-    staleTime: 30_000,
+    staleTime: 10_000,
     retry: false,
+    refetchInterval: 5_000,              // ← polling
+    refetchIntervalInBackground: true,
   });
 
   // ── Product alerts ────────────────────────────────────────────────────────
@@ -39,13 +43,15 @@ export const DistributorDashboard: React.FC = () => {
     queryFn: () => getProductAlertsFn(false),
     staleTime: 60_000,
     retry: false,
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: true,
   });
 
-  // ── Check alerts (sahifa ochilganda) ──────────────────────────────────────
+  // ── Check alerts ──────────────────────────────────────────────────────────
   const { mutate: checkAlerts } = useMutation({
     mutationFn: checkProductAlertsFn,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['product-alerts'] }),
-    onError: () => {},      // ← 500 xatoni jimgina o'tkazib yuborish
+    onError: () => {},
   });
 
   useEffect(() => { checkAlerts(); }, []);
@@ -60,12 +66,10 @@ export const DistributorDashboard: React.FC = () => {
     onError: () => {},
   });
 
-  // ── Data ──────────────────────────────────────────────────────────────────
   const stats         = dashRes?.data || dashRes || {};
   const recentOrders: any[] = ordersRes?.data?.orders || ordersRes?.orders || [];
   const alerts: any[] = alertsData?.alerts || alertsData?.data?.alerts || [];
   const unreadCount   = alerts.length;
-
   const salesTrend    = stats.salesTrend || [];
 
   const getStatusColor = (s: string) =>
@@ -91,22 +95,18 @@ export const DistributorDashboard: React.FC = () => {
           <p className="text-slate-500 text-sm mt-1">Bugungi biznes ko'rsatkichlaringizni kuzating.</p>
         </div>
         <div className="flex gap-2">
-          <button
-            onClick={() => navigate('/distributor/products/add')}
-            className="flex items-center gap-2 px-4 py-2 bg-sky-500 text-white rounded-xl hover:bg-sky-600 transition-all font-medium text-sm shadow-sm"
-          >
+          <button onClick={() => navigate('/distributor/products/add')}
+            className="flex items-center gap-2 px-4 py-2 bg-sky-500 text-white rounded-xl hover:bg-sky-600 transition-all font-medium text-sm shadow-sm">
             <Plus className="w-4 h-4" /> Mahsulot qo'shish
           </button>
-          <button
-            onClick={() => navigate('/distributor/orders')}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-all font-medium text-sm shadow-sm"
-          >
+          <button onClick={() => navigate('/distributor/orders')}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-all font-medium text-sm shadow-sm">
             <Package className="w-4 h-4" /> Barcha buyurtmalar
           </button>
         </div>
       </div>
 
-      {/* Alerts banner */}
+      {/* Alerts */}
       {unreadCount > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
           <div className="flex items-center gap-2 mb-3">
@@ -120,24 +120,15 @@ export const DistributorDashboard: React.FC = () => {
                   <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
                   <div>
                     <p className="text-sm font-medium text-slate-800">{alert.message}</p>
-                    {alert.product && (
-                      <p className="text-xs text-slate-500">{alert.product.name} — {alert.product.sku}</p>
-                    )}
+                    {alert.product && <p className="text-xs text-slate-500">{alert.product.name} — {alert.product.sku}</p>}
                   </div>
                 </div>
-                <button
-                  onClick={() => markRead(alert.id)}
-                  className="text-xs text-amber-600 hover:text-amber-800 font-semibold ml-4 shrink-0"
-                >
+                <button onClick={() => markRead(alert.id)} className="text-xs text-amber-600 hover:text-amber-800 font-semibold ml-4 shrink-0">
                   O'qildi
                 </button>
               </div>
             ))}
-            {unreadCount > 3 && (
-              <p className="text-xs text-amber-600 text-center font-medium pt-1">
-                + {unreadCount - 3} ta boshqa
-              </p>
-            )}
+            {unreadCount > 3 && <p className="text-xs text-amber-600 text-center font-medium pt-1">+ {unreadCount - 3} ta boshqa</p>}
           </div>
         </div>
       )}
@@ -145,35 +136,13 @@ export const DistributorDashboard: React.FC = () => {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          {
-            label: 'Bugungi tushum',
-            value: `${(stats.revenue || 0).toLocaleString('uz-UZ')} UZS`,
-            icon: DollarSign, bg: 'bg-emerald-50', c: 'text-emerald-500',
-          },
-          {
-            label: 'Yangi buyurtmalar',
-            value: `${stats.incomingOrders || 0} ta`,
-            icon: Package, bg: 'bg-sky-50', c: 'text-sky-500',
-          },
-          {
-            label: 'Tayyorlanmoqda',
-            value: `${stats.readyOrders || 0} ta`,
-            icon: AlertTriangle, bg: 'bg-amber-50', c: 'text-amber-500',
-            onClick: () => navigate('/distributor/orders'),
-          },
-          {
-            label: "Yetkazilayotgan",
-            value: `${stats.shippedOrders || 0} ta`,
-            icon: TrendingUp,
-            bg: 'bg-green-50',
-            c: 'text-green-500',
-          },
+          { label: 'Bugungi tushum',   value: `${(stats.revenue || 0).toLocaleString('uz-UZ')} UZS`, icon: DollarSign,   bg: 'bg-emerald-50', c: 'text-emerald-500' },
+          { label: 'Yangi buyurtmalar', value: `${stats.incomingOrders || 0} ta`,                     icon: Package,       bg: 'bg-sky-50',     c: 'text-sky-500'     },
+          { label: 'Tayyorlanmoqda',   value: `${stats.readyOrders || 0} ta`,                         icon: AlertTriangle, bg: 'bg-amber-50',   c: 'text-amber-500', onClick: () => navigate('/distributor/orders') },
+          { label: 'Yetkazilayotgan',  value: `${stats.shippedOrders || 0} ta`,                       icon: TrendingUp,    bg: 'bg-green-50',   c: 'text-green-500'  },
         ].map((card) => (
-          <div
-            key={card.label}
-            onClick={(card as any).onClick}
-            className={`bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow ${(card as any).onClick ? 'cursor-pointer' : ''}`}
-          >
+          <div key={card.label} onClick={(card as any).onClick}
+            className={`bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow ${(card as any).onClick ? 'cursor-pointer' : ''}`}>
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold text-slate-500">{card.label}</p>
               <div className={`w-10 h-10 rounded-full ${card.bg} ${card.c} flex items-center justify-center`}>
@@ -197,33 +166,22 @@ export const DistributorDashboard: React.FC = () => {
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-bold text-slate-900">So'nggi buyurtmalar</h2>
-            <button
-              onClick={() => navigate('/distributor/orders')}
-              className="text-sm text-sky-500 font-medium hover:text-sky-600 flex items-center gap-1 group"
-            >
+            <button onClick={() => navigate('/distributor/orders')}
+              className="text-sm text-sky-500 font-medium hover:text-sky-600 flex items-center gap-1 group">
               Barchasi <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
             </button>
           </div>
           <div className="space-y-3 flex-1">
             {recentOrders.length > 0 ? (
               recentOrders.map((order: any) => (
-                <div
-                  key={order.id}
-                  onClick={() => navigate(`/distributor/orders/${order.id}`)}
-                  className="flex flex-col p-3.5 rounded-xl bg-slate-50 border border-slate-100 hover:bg-slate-100 transition-colors cursor-pointer"
-                >
+                <div key={order.id} onClick={() => navigate(`/distributor/orders/${order.id}`)}
+                  className="flex flex-col p-3.5 rounded-xl bg-slate-50 border border-slate-100 hover:bg-slate-100 transition-colors cursor-pointer">
                   <div className="flex items-center justify-between mb-1.5">
-                    <p className="text-sm font-semibold text-slate-900">
-                      {order.client?.storeName || "Do'kon"}
-                    </p>
-                    <p className="text-xs text-slate-400">
-                      {format(new Date(order.createdAt), 'dd MMM, HH:mm', { locale: uz })}
-                    </p>
+                    <p className="text-sm font-semibold text-slate-900">{order.client?.storeName || "Do'kon"}</p>
+                    <p className="text-xs text-slate-400">{format(new Date(order.createdAt), 'dd MMM, HH:mm', { locale: uz })}</p>
                   </div>
                   <div className="flex items-end justify-between">
-                    <p className="text-[13px] font-bold text-slate-700">
-                      {(order.totalAmount || 0).toLocaleString('uz-UZ')} UZS
-                    </p>
+                    <p className="text-[13px] font-bold text-slate-700">{(order.totalAmount || 0).toLocaleString('uz-UZ')} UZS</p>
                     <Badge variant={getStatusColor(order.status)}>{order.status}</Badge>
                   </div>
                 </div>

@@ -3,7 +3,7 @@ import {
   LogOut, LayoutDashboard, Package, ClipboardList,
   BarChart3, MessageSquare, Truck,
   Zap, Warehouse, Tag, Settings,
-  FolderOpen, DollarSign, Users, UserCheck,
+  FolderOpen, DollarSign, Users,
   ChevronLeft, ChevronRight, ShoppingCart,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
@@ -19,7 +19,7 @@ const distributorMenu = [
   { to: '/distributor/chat',        icon: MessageSquare,   label: 'Chat' },
   { to: '/distributor/settings',    icon: Settings,        label: 'Sozlamalar' },
   { to: '/distributor/categories',  icon: FolderOpen,      label: 'Kategoriyalar' },
-  { to: '/distributor/connections', icon: UserCheck,       label: "Ulanish So'rovlari" },
+  { to: '/distributor/clients', icon: Users, label: 'Mijozlar' },
 ];
 
 const clientMenu = [

@@ -67,9 +67,6 @@ export const DistributorDashboard: React.FC = () => {
   const unreadCount   = alerts.length;
 
   const salesTrend    = stats.salesTrend || [];
-  const currentSales  = salesTrend[salesTrend.length - 1]?.sales || 0;
-  const previousSales = salesTrend[salesTrend.length - 2]?.sales || 0;
-  const growth = previousSales > 0 ? ((currentSales - previousSales) / previousSales) * 100 : 0;
 
   const getStatusColor = (s: string) =>
     ({ NEW: 'warning', ACCEPTED: 'primary', DELIVERED: 'success', CANCELLED: 'danger', IN_TRANSIT: 'info' } as any)[s] || 'secondary';

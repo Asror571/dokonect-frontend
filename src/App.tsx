@@ -9,9 +9,9 @@ import { LoginPage }  from './pages/auth/LoginPage';
 import RegisterPage   from './pages/auth/RegisterPage';
 
 // Admin
-import GlobalDashboard   from './pages/admin/GlobalDashboard';
+import GlobalDashboard                   from './pages/admin/GlobalDashboard';
 import { OrdersPage as AdminOrdersPage } from './pages/admin/OrdersPage';
-import { UsersPage }     from './pages/admin/UsersPage';
+import { UsersPage }                     from './pages/admin/UsersPage';
 
 // Distributor
 import { DistributorDashboard } from './pages/distributor/DistributorDashboard';
@@ -25,6 +25,9 @@ import AnalyticsPage            from './pages/distributor/AnalyticsPage';
 import SettingsPage             from './pages/distributor/SettingsPage';
 import DistributorChatPage      from './pages/distributor/ChatPage';
 import PricingPage              from './pages/distributor/PricingPage';
+import CategoriesPage           from './pages/distributor/CategoriesPage';   // ← yangi
+import ClientsPage              from './pages/distributor/ClientsPage';       // ← yangi
+import ClientDetailPage         from './pages/distributor/ClientDetailPage';  // ← yangi
 
 // Store
 import StoreDashboard   from './pages/store/StoreDashboard';
@@ -48,11 +51,10 @@ const ProtectedRoute = ({
   if (!isAuthenticated) return <Navigate to="/login" replace />;
 
   if (roles && user?.role && !roles.includes(user.role)) {
-    // Role mos kelmasa — o'z dashboardiga
-    if (user.role === 'ADMIN')        return <Navigate to="/admin/dashboard"       replace />;
-    if (user.role === 'DISTRIBUTOR')  return <Navigate to="/distributor/dashboard" replace />;
-    if (user.role === 'CLIENT' || user.role === 'STORE') return <Navigate to="/store/dashboard" replace />;
-    if (user.role === 'DRIVER')       return <Navigate to="/driver/dashboard"      replace />;
+    if (user.role === 'ADMIN')                               return <Navigate to="/admin/dashboard"       replace />;
+    if (user.role === 'DISTRIBUTOR')                         return <Navigate to="/distributor/dashboard" replace />;
+    if (user.role === 'CLIENT' || user.role === 'STORE')     return <Navigate to="/store/dashboard"       replace />;
+    if (user.role === 'DRIVER')                              return <Navigate to="/driver/dashboard"      replace />;
     return <Navigate to="/" replace />;
   }
 
@@ -65,10 +67,10 @@ const HomeRedirect = () => {
 
   if (!isAuthenticated) return <Navigate to="/login" replace />;
 
-  if (user?.role === 'ADMIN')                           return <Navigate to="/admin/dashboard"       replace />;
-  if (user?.role === 'DISTRIBUTOR')                     return <Navigate to="/distributor/dashboard" replace />;
-  if (user?.role === 'CLIENT' || user?.role === 'STORE') return <Navigate to="/store/dashboard"      replace />;
-  if (user?.role === 'DRIVER')                          return <Navigate to="/driver/dashboard"      replace />;
+  if (user?.role === 'ADMIN')                            return <Navigate to="/admin/dashboard"       replace />;
+  if (user?.role === 'DISTRIBUTOR')                      return <Navigate to="/distributor/dashboard" replace />;
+  if (user?.role === 'CLIENT' || user?.role === 'STORE') return <Navigate to="/store/dashboard"       replace />;
+  if (user?.role === 'DRIVER')                           return <Navigate to="/driver/dashboard"      replace />;
 
   return <Navigate to="/login" replace />;
 };
@@ -84,19 +86,12 @@ function App() {
         <Route path="/login"    element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
 
-        {/* ── ADMIN (o'z layout bilan) ── */}
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute roles={['ADMIN']}>
-              <AdminLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index                element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard"     element={<GlobalDashboard />} />
-          <Route path="orders"        element={<AdminOrdersPage />} />
-          <Route path="users"         element={<UsersPage />} />
+        {/* ── ADMIN ── */}
+        <Route path="/admin" element={<ProtectedRoute roles={['ADMIN']}><AdminLayout /></ProtectedRoute>}>
+          <Route index            element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<GlobalDashboard />} />
+          <Route path="orders"    element={<AdminOrdersPage />} />
+          <Route path="users"     element={<UsersPage />} />
         </Route>
 
         {/* ── APP LAYOUT ── */}
@@ -115,6 +110,9 @@ function App() {
           <Route path="/distributor/pricing"      element={<ProtectedRoute roles={['DISTRIBUTOR','ADMIN']}><PricingPage /></ProtectedRoute>} />
           <Route path="/distributor/chat"         element={<ProtectedRoute roles={['DISTRIBUTOR','ADMIN']}><DistributorChatPage /></ProtectedRoute>} />
           <Route path="/distributor/settings"     element={<ProtectedRoute roles={['DISTRIBUTOR','ADMIN']}><SettingsPage /></ProtectedRoute>} />
+          <Route path="/distributor/categories"   element={<ProtectedRoute roles={['DISTRIBUTOR','ADMIN']}><CategoriesPage /></ProtectedRoute>} />
+          <Route path="/distributor/clients"      element={<ProtectedRoute roles={['DISTRIBUTOR','ADMIN']}><ClientsPage /></ProtectedRoute>} />
+          <Route path="/distributor/clients/:id"  element={<ProtectedRoute roles={['DISTRIBUTOR','ADMIN']}><ClientDetailPage /></ProtectedRoute>} />
 
           {/* STORE / CLIENT */}
           <Route path="/store/dashboard"    element={<ProtectedRoute roles={['CLIENT','STORE','ADMIN']}><StoreDashboard /></ProtectedRoute>} />

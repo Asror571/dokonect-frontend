@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Lock, Phone, Zap, UserPlus, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, Phone, Zap, UserPlus, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../api/api';
 import { useAuthStore } from '../../store/authStore';
@@ -15,29 +15,26 @@ export const LoginPage: React.FC = () => {
   const [password,     setPassword]     = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading,      setLoading]      = useState(false);
+  const [errorMsg,     setErrorMsg]     = useState('');   // ← xato state
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMsg('');   // ← har submit da tozalash
+
     try {
       const response = await api.post('/api/auth/login', {
         ...(loginType === 'email' ? { email } : { phone }),
         password,
       });
 
-      console.log('✅ Login response:', response.data);
-
-      // API: { user, token } yoki { data: { user, token } } yoki { data: { user, accessToken } }
       const payload      = response.data?.data ?? response.data;
       const user         = payload?.user        ?? payload;
       const accessToken  = payload?.token       ?? payload?.accessToken ?? '';
       const refreshToken = payload?.refreshToken ?? '';
 
-      console.log('👤 User:', user);
-      console.log('🔑 Token:', accessToken);
-
       if (!user?.id) {
-        toast.error('Foydalanuvchi topilmadi');
+        setErrorMsg('Foydalanuvchi topilmadi');
         return;
       }
 
@@ -65,8 +62,11 @@ export const LoginPage: React.FC = () => {
       else                                                       navigate('/',                       { replace: true });
 
     } catch (error: any) {
+      const msg = error.response?.data?.message
+        || error.response?.data?.error
+        || `Xatolik (${error.response?.status || 'network'})`;
+      setErrorMsg(msg);   // ← sahifada ko'rsatish
       console.log('❌ Login error:', error.response?.data);
-      toast.error(error.response?.data?.message || 'Login xatosi');
     } finally {
       setLoading(false);
     }
@@ -96,7 +96,7 @@ export const LoginPage: React.FC = () => {
         {/* Toggle */}
         <div className="flex p-1 bg-white/5 rounded-2xl mb-8 border border-white/5">
           {(['phone', 'email'] as const).map((type) => (
-            <button key={type} type="button" onClick={() => setLoginType(type)}
+            <button key={type} type="button" onClick={() => { setLoginType(type); setErrorMsg(''); }}
               className={`flex-1 py-4 px-4 rounded-xl text-sm font-bold transition-all ${
                 loginType === type ? 'bg-white text-slate-900 shadow-xl' : 'text-slate-400 hover:text-white'
               }`}>
@@ -148,15 +148,24 @@ export const LoginPage: React.FC = () => {
                 required
                 className="w-full pl-12 pr-12 py-5 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:bg-white/10 transition-all font-medium"
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
-              >
+              <button type="button" onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors">
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
           </div>
+
+          {/* ── Xato xabari — sahifada doimiy ko'rinadi ── */}
+          {errorMsg && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-start gap-3 bg-red-500/10 border border-red-500/30 rounded-2xl px-4 py-3"
+            >
+              <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+              <p className="text-sm text-red-300 font-medium">{errorMsg}</p>
+            </motion.div>
+          )}
 
           <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
             type="submit" disabled={loading}
@@ -165,7 +174,7 @@ export const LoginPage: React.FC = () => {
           </motion.button>
         </form>
 
-        {/* Register button */}
+        {/* Register */}
         <Link to="/register" className="block mt-4">
           <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
             className="w-full flex items-center justify-center gap-2 py-4 bg-white/5 border border-white/10 rounded-2xl text-slate-300 hover:bg-white/10 hover:text-white transition-all font-black text-xs uppercase tracking-widest cursor-pointer">
@@ -188,7 +197,7 @@ export const LoginPage: React.FC = () => {
             ].map(({ label, phone: p }) => (
               <button key={p} type="button"
                 className="w-full flex items-center justify-between group cursor-pointer"
-                onClick={() => { setLoginType('phone'); setPhone(p); setPassword('123456'); }}>
+                onClick={() => { setLoginType('phone'); setPhone(p); setPassword('123456'); setErrorMsg(''); }}>
                 <span className="text-xs font-bold text-slate-300 group-hover:text-white transition-colors">{label}</span>
                 <span className="text-[10px] font-mono text-slate-500">{p}</span>
               </button>

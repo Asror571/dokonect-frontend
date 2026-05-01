@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import socket from '../lib/socket';
 import api from '../api/api';
-import { useAuthStore } from '../store/auth.store';
+import { useAuthStore } from '../store/authStore';   // ← auth.store → authStore
 
 export interface Message {
   id: string;
@@ -33,18 +33,17 @@ export interface ChatRoom {
   unreadCount: number;
 }
 
-// Get all chat rooms
 export function useChatRooms() {
   return useQuery<ChatRoom[]>({
     queryKey: ['chat-rooms'],
     queryFn: async () => {
       const res = await api.get('/api/chat/rooms');
-      return res.data.data || [];
+      return res.data.data || res.data || [];
     },
+    retry: false,
   });
 }
 
-// Chat with a specific room
 export function useChatRoom(roomId: string | null) {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
@@ -56,9 +55,10 @@ export function useChatRoom(roomId: string | null) {
     queryFn: async () => {
       if (!roomId) return [];
       const res = await api.get(`/api/chat/rooms/${roomId}/messages`);
-      return res.data.data?.messages || [];
+      return res.data.data?.messages || res.data?.messages || [];
     },
     enabled: !!roomId,
+    retry: false,
   });
 
   useEffect(() => {
@@ -68,19 +68,12 @@ export function useChatRoom(roomId: string | null) {
   useEffect(() => {
     if (!roomId) return;
 
-    // Connect socket if not connected
     if (!socket.connected) {
       const token = localStorage.getItem('accessToken');
-      if (token) {
-        socket.auth = { token };
-        socket.connect();
-      }
+      if (token) { socket.auth = { token }; socket.connect(); }
     }
 
-    // Join room
     socket.emit('join_room', { roomId });
-
-    // Mark messages as read via API
     api.patch(`/api/chat/rooms/${roomId}/read`).catch(() => {});
 
     const onNewMessage = ({ message }: { message: Message }) => {
@@ -88,7 +81,7 @@ export function useChatRoom(roomId: string | null) {
       queryClient.invalidateQueries({ queryKey: ['chat-rooms'] });
     };
 
-    const onTyping = ({ userId }: { userId: string; roomId: string }) => {
+    const onTyping = ({ userId }: { userId: string }) => {
       if (userId === user?.id) return;
       setTypingUsers((prev) => [...new Set([...prev, userId])]);
       setTimeout(() => setTypingUsers((prev) => prev.filter((id) => id !== userId)), 2000);
@@ -114,17 +107,9 @@ export function useChatRoom(roomId: string | null) {
     socket.emit('typing', { roomId });
   }, [roomId]);
 
-  return {
-    messages,
-    isLoading,
-    typingUsers,
-    sendMessage,
-    emitTyping,
-    refetch
-  };
+  return { messages, isLoading, typingUsers, sendMessage, emitTyping, refetch };
 }
 
-// Create chat room mutation
 export function useCreateChatRoom() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -138,15 +123,7 @@ export function useCreateChatRoom() {
   });
 }
 
-// Legacy exports for compatibility
-export function useConversations() {
-  return useChatRooms();
-}
-
-export function useChat(receiverId: string | null) {
-  return useChatRoom(receiverId);
-}
-
-export function useSendMessage() {
-  return useCreateChatRoom();
-}
+// Legacy exports
+export const useConversations = useChatRooms;
+export const useChat          = useChatRoom;
+export const useSendMessage   = useCreateChatRoom;

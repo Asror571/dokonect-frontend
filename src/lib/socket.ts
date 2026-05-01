@@ -1,10 +1,11 @@
 import { io } from 'socket.io-client';
 
-const SOCKET_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://16.16.213.165:5000';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://dokonect-server.onrender.com';
 
 const socket = io(SOCKET_URL, {
   auth: { token: localStorage.getItem('accessToken') },
   autoConnect: false,
+  transports: ['websocket', 'polling'],
 });
 
 export default socket;

@@ -27,7 +27,7 @@ const RegisterPage = () => {
   const navigate = useNavigate();
   const { setAuth } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
-  const [errorMsg,     setErrorMsg]     = useState('');   // ← xato state
+  const [errorMsg,     setErrorMsg]     = useState('');
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
@@ -37,7 +37,27 @@ const RegisterPage = () => {
   const selectedRole = watch('role');
 
   const { mutate, isPending } = useMutation({
-    mutationFn: registerFn,
+    mutationFn: (formData: RegisterForm) => {
+      // ── Backend ga to'g'ri format bilan yuborish ──
+      const payload: any = {
+        name:     formData.name,
+        email:    formData.email,
+        phone:    formData.phone,
+        password: formData.password,
+        address:  formData.address,
+        role:     formData.role,   // DISTRIBUTOR yoki STORE
+      };
+
+      // Role ga qarab qo'shimcha maydonlar
+      if (formData.role === 'DISTRIBUTOR') {
+        payload.companyName = formData.name;
+      } else {
+        payload.storeName = formData.name;
+      }
+
+      console.log('📤 Register payload:', payload);
+      return registerFn(payload);
+    },
     onSuccess: (data) => {
       setErrorMsg('');
       console.log('✅ Register response:', data);
@@ -45,9 +65,6 @@ const RegisterPage = () => {
       const user   = data.user   ?? data.data?.user   ?? data.data;
       const accTok = data.token  ?? data.accessToken  ?? data.data?.token ?? data.data?.accessToken ?? '';
       const refTok = data.refreshToken ?? data.data?.refreshToken ?? '';
-
-      console.log('👤 User:', user);
-      console.log('🔑 Token:', accTok);
 
       if (!user?.id) {
         setErrorMsg("Foydalanuvchi ma'lumotlari topilmadi");
@@ -78,12 +95,13 @@ const RegisterPage = () => {
       else                                  navigate('/',                       { replace: true });
     },
     onError: (error: any) => {
-      console.log('❌ Error:', error);
       console.log('❌ Error response:', error.response?.data);
-      const msg = error.response?.data?.message
-        || error.response?.data?.error
-        || `Xatolik (${error.response?.status || 'network'})`;
-      setErrorMsg(msg);   // ← sahifada ko'rsatish
+      const data = error.response?.data;
+      // message Array bo'lsa birinchisini olish
+      const msg = Array.isArray(data?.message)
+        ? data.message[0]
+        : data?.message || data?.error || `Xatolik (${error.response?.status || 'network'})`;
+      setErrorMsg(msg);
     },
   });
 
@@ -109,7 +127,7 @@ const RegisterPage = () => {
 
           <form onSubmit={handleSubmit((d) => { setErrorMsg(''); mutate(d); })} className="space-y-4">
 
-            {/* Role selector */}
+            {/* Role */}
             <div>
               <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                 Rolingiz
@@ -119,17 +137,13 @@ const RegisterPage = () => {
                   { value: 'DISTRIBUTOR', icon: Briefcase, label: 'Distribyutor' },
                   { value: 'STORE',       icon: Store,     label: "Do'kon egasi" },
                 ].map(({ value, icon: Icon, label }) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setValue('role', value as any)}
+                  <button key={value} type="button" onClick={() => setValue('role', value as any)}
                     className={cn(
                       'flex items-center gap-3 p-3.5 rounded-xl border text-sm font-medium transition-all',
                       selectedRole === value
                         ? 'border-violet-500 bg-violet-50 text-violet-700 shadow-sm'
                         : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50'
-                    )}
-                  >
+                    )}>
                     <div className={cn(
                       'w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
                       selectedRole === value ? 'bg-violet-600 text-white' : 'bg-slate-100 text-slate-500'
@@ -145,7 +159,7 @@ const RegisterPage = () => {
             <div className="grid grid-cols-2 gap-3">
               <Input
                 label={selectedRole === 'DISTRIBUTOR' ? 'Kompaniya nomi' : "Do'kon nomi"}
-                placeholder="Dokonect MChJ"
+                placeholder={selectedRole === 'DISTRIBUTOR' ? 'Dokonect MChJ' : "Baraka Do'koni"}
                 leftIcon={<User className="w-4 h-4" />}
                 error={errors.name?.message}
                 {...register('name')}
@@ -190,20 +204,15 @@ const RegisterPage = () => {
                     errors.password ? 'border-red-400' : 'border-slate-200'
                   )}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-                >
+                <button type="button" onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-              {errors.password && (
-                <p className="text-xs text-red-500 mt-1">{errors.password.message}</p>
-              )}
+              {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password.message}</p>}
             </div>
 
-            {/* ── Xato xabari — sahifada doimiy ── */}
+            {/* Xato — sahifada doimiy */}
             {errorMsg && (
               <motion.div
                 initial={{ opacity: 0, y: -6 }}

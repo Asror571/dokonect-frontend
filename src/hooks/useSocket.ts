@@ -12,7 +12,7 @@ export const useSocket = () => {
     if (!token || !user.id) return;
 
     // Initialize socket connection
-    socket = io(import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000', {
+    socket = io(import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://16.16.213.165:5000', {
       auth: { token },
       transports: ['websocket'],
     });

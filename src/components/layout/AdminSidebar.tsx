@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, ShoppingCart, Users, TrendingUp,
@@ -18,26 +17,29 @@ const menu = [
   { to: '/admin/analytics',    icon: TrendingUp,      label: 'Analitika'        },
 ];
 
-const AdminSidebar = () => {
-  const { user, logout } = useAuthStore();
-  const navigate  = useNavigate();
-  const [collapsed, setCollapsed] = useState(false);
+interface Props {
+  collapsed: boolean;
+  onToggleCollapse: () => void;
+}
 
+const AdminSidebar = ({ collapsed, onToggleCollapse }: Props) => {
+  const { user, logout } = useAuthStore();
+  const navigate = useNavigate();
   const handleLogout = () => { logout(); navigate('/login', { replace: true }); };
 
   return (
     <aside
-      className="bg-slate-950 flex flex-col h-full fixed left-0 top-0 z-50 border-r border-slate-800 transition-all duration-300"
+      className="bg-slate-950 flex flex-col h-full fixed left-0 top-0 z-50 border-r border-slate-800 transition-all duration-300 overflow-hidden"
       style={{ width: collapsed ? 64 : 240 }}
     >
       {/* Logo */}
-      <div className={`border-b border-slate-800 flex items-center ${collapsed ? 'px-3 py-5 justify-center' : 'px-5 py-5 justify-between'}`}>
+      <div className={`border-b border-slate-800 flex items-center gap-2.5 ${collapsed ? 'px-3 py-5 justify-center' : 'px-5 py-5 justify-between'}`}>
         <div className="flex items-center gap-2.5 min-w-0 cursor-pointer" onClick={() => navigate('/admin/dashboard')}>
           <div className="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center shrink-0">
             <Zap className="w-4 h-4 text-white" />
           </div>
           {!collapsed && (
-            <div>
+            <div className="overflow-hidden">
               <span className="text-white font-bold text-base tracking-tight whitespace-nowrap">
                 Doko<span className="text-violet-400">nect</span>
               </span>
@@ -46,16 +48,16 @@ const AdminSidebar = () => {
           )}
         </div>
         {!collapsed && (
-          <button onClick={() => setCollapsed(true)}
+          <button onClick={onToggleCollapse}
             className="shrink-0 p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-slate-800 transition-all">
             <ChevronLeft className="w-4 h-4" />
           </button>
         )}
       </div>
 
-      {/* Expand button */}
+      {/* Expand button when collapsed */}
       {collapsed && (
-        <button onClick={() => setCollapsed(false)}
+        <button onClick={onToggleCollapse}
           className="mx-auto mt-3 p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-slate-800 transition-all">
           <ChevronRight className="w-4 h-4" />
         </button>

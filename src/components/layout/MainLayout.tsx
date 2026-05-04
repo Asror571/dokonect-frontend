@@ -3,10 +3,12 @@ import { useAuthStore } from '../../store/auth.store';
 import StoreNavbar from './StoreNavbar';
 import Sidebar from './Sidebar';
 import AdminSidebar from './AdminSidebar';
+import { useState } from 'react';
 
 const MainLayout = () => {
   const { user } = useAuthStore();
   const location = useLocation();
+  const [collapsed, setCollapsed] = useState(false);
 
   if (location.pathname === '/') {
     const defaultPath = user?.role === 'ADMIN' ? '/catalog' : user?.role === 'DISTRIBUTOR' ? '/distributor/products' : '/admin';
@@ -16,7 +18,7 @@ const MainLayout = () => {
   if (user?.role === 'ADMIN') {
     return (
       <div className="flex h-screen bg-slate-50 overflow-hidden">
-        <AdminSidebar />
+        <AdminSidebar collapsed={collapsed} onToggleCollapse={() => setCollapsed(p => !p)} />
         <main className="flex-1 ml-64 overflow-y-auto">
           <div className="p-8">
             <Outlet />

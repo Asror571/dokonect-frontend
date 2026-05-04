@@ -1,4 +1,4 @@
-import api from './api';
+﻿import api from './api';
 
 export const getAdminDashboardFn = async () => {
   const res = await api.get('/api/admin/dashboard');
@@ -26,6 +26,16 @@ export const getAdminUsersFn = async (params?: {
   return res.data;
 };
 
+export const createAdminUserFn = async (data: {
+  name: string;
+  phone: string;
+  password: string;
+  role: string;
+}) => {
+  const res = await api.post('/api/admin/users', data);
+  return res.data;
+};
+
 export const updateAdminUserStatusFn = async ({
   userId,
   status,
@@ -37,12 +47,28 @@ export const updateAdminUserStatusFn = async ({
   return res.data;
 };
 
+export const updateAdminUserRoleFn = async ({
+  userId,
+  role,
+}: {
+  userId: string;
+  role: string;
+}) => {
+  const res = await api.patch(`/api/admin/users/${userId}/role`, { role });
+  return res.data;
+};
+
+export const deleteAdminUserFn = async (userId: string) => {
+  const res = await api.delete(`/api/admin/users/${userId}`);
+  return res.data;
+};
+
 export const getAdminAnalyticsFn = async (period = '30d') => {
   const res = await api.get('/api/admin/analytics', { params: { period } });
   return res.data;
 };
 
-// ── Distributors ──────────────────────────────────────────────────────────────
+// -- Distributors -------------------------------------------------------
 export const getAdminDistributorsFn = async () => {
   const res = await api.get('/api/admin/distributors');
   return res.data;
@@ -60,5 +86,16 @@ export const updateAdminDistributorFn = async ({ id, data }: { id: string; data:
 
 export const deleteAdminDistributorFn = async (id: string) => {
   const res = await api.delete(`/api/admin/distributors/${id}`);
+  return res.data;
+};
+
+export const getAdminDistributorStatsFn = async (distributorId: string) => {
+  const res = await api.get(`/api/admin/distributors/${distributorId}/stats`);
+  return res.data;
+};
+
+// -- Stores -------------------------------------------------------------
+export const getAdminStorePaymentsFn = async (storeId: string) => {
+  const res = await api.get(`/api/admin/stores/${storeId}/payments`);
   return res.data;
 };

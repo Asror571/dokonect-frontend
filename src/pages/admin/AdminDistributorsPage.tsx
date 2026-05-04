@@ -1,6 +1,6 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Truck, Search, Plus, Edit3, Trash2, X, Loader2, Phone, MapPin, Star } from 'lucide-react';
+import { Truck, Search, Plus, Edit3, Trash2, X, Loader2, Phone, MapPin, Star, DollarSign, TrendingUp } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
   getAdminDistributorsFn, createAdminDistributorFn,
@@ -143,18 +143,59 @@ const AdminDistributorsPage = () => {
                 )}
               </div>
 
-              <div className="grid grid-cols-3 gap-2 pt-3 border-t border-slate-800 text-center">
+              <div className="grid grid-cols-4 gap-2 pt-3 border-t border-slate-800 text-center">
                 {[
-                  { label: "Do'konlar",   value: d._count?.connections  || d.clientsCount  || 0 },
-                  { label: 'Buyurtmalar', value: d._count?.orders       || d.ordersCount   || 0 },
-                  { label: 'Haydovchi',   value: d._count?.drivers      || d.driversCount  || 0 },
+                  { label: "Do'konlar",  value: d._count?.connections || d.clientsCount || 0,               c: 'text-white'        },
+                  { label: 'Yetkazildi', value: d.deliveredOrders || d._count?.deliveredOrders || 0, c: 'text-emerald-400'  },
+                  { label: 'Faol',       value: d.activeOrders   || d._count?.activeOrders    || 0, c: 'text-amber-400'    },
+                  { label: 'Haydovchi',  value: d._count?.drivers || d.driversCount || 0,              c: 'text-slate-300'    },
                 ].map((s) => (
                   <div key={s.label}>
-                    <p className="text-base font-bold text-white">{s.value}</p>
+                    <p className={`text-sm font-bold ${(s as any).c || "text-white"}`}>{s.value}</p>
                     <p className="text-[10px] text-slate-500">{s.label}</p>
                   </div>
                 ))}
               </div>
+
+              {/* Revenue */}
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <div className="bg-slate-800/50 rounded-xl p-2.5 text-center">
+                  <div className="flex items-center justify-center gap-1 mb-1">
+                    <DollarSign className="w-3 h-3 text-emerald-400" />
+                    <p className="text-[10px] text-slate-500">Umumiy daromad</p>
+                  </div>
+                  <p className="text-xs font-bold text-emerald-400">
+                    {d.totalRevenue ? ((d.totalRevenue) / 1_000_000).toFixed(1) + 'M UZS' : '—'}
+                  </p>
+                </div>
+                <div className="bg-slate-800/50 rounded-xl p-2.5 text-center">
+                  <div className="flex items-center justify-center gap-1 mb-1">
+                    <TrendingUp className="w-3 h-3 text-sky-400" />
+                    <p className="text-[10px] text-slate-500">Oylik daromad</p>
+                  </div>
+                  <p className="text-xs font-bold text-sky-400">
+                    {d.monthlyRevenue ? ((d.monthlyRevenue) / 1_000_000).toFixed(1) + 'M UZS' : '—'}
+                  </p>
+                </div>
+              </div>
+
+              {d.clients && d.clients.length > 0 && (
+                <div className="mt-2 pt-2 border-t border-slate-800">
+                  <p className="text-[10px] text-slate-500 mb-1.5">Biriktirilgan do’konlar</p>
+                  <div className="flex flex-wrap gap-1">
+                    {d.clients.slice(0, 3).map((cl: any) => (
+                      <span key={cl.id} className="text-[10px] px-2 py-0.5 bg-cyan-900/30 text-cyan-400 rounded-full border border-cyan-800/30">
+                        {cl.storeName || cl.name}
+                      </span>
+                    ))}
+                    {d.clients.length > 3 && (
+                      <span className="text-[10px] px-2 py-0.5 bg-slate-800 text-slate-400 rounded-full">
+                        +{d.clients.length - 3} ta
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           ))}
           {filtered.length === 0 && (

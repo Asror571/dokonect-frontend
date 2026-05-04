@@ -142,11 +142,12 @@ const GlobalDashboard = () => {
       </div>
 
       {/* KPI Cards — Row 2 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: 'Mahsulotlar',    value: products.total||0, sub: `Kam qolgan: ${products.lowStock||0}`,    icon: Package,  bg: 'bg-amber-500/10',  c: 'text-amber-400'  },
           { label: 'Faol do\'konlar', value: users.shops?.active||0, sub: `Jami: ${users.shops?.total||0}`,  icon: Store,    bg: 'bg-violet-500/10', c: 'text-violet-400' },
           { label: 'Faol haydovchilar', value: users.drivers?.online||0, sub: `Jami: ${users.drivers?.total||0}`, icon: Truck, bg: 'bg-cyan-500/10',   c: 'text-cyan-400'   },
+          { label: 'Faol distribyutorlar', value: users.distributors?.active||0, sub: `Jami: ${users.distributors?.total||0}`, icon: TrendingUp, bg: 'bg-indigo-500/10', c: 'text-indigo-400' },
         ].map((s) => (
           <div key={s.label} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex items-center gap-4">
             <div className={`w-12 h-12 rounded-xl ${s.bg} flex items-center justify-center shrink-0`}>

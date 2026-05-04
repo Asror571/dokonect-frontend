@@ -11,7 +11,8 @@ const AdminLayout: React.FC = () => {
   return (
     <div className="flex min-h-screen bg-slate-950">
       <AdminSidebar />
-      <main className="flex-1 ml-64 overflow-y-auto">
+      {/* ml matches sidebar width — sidebar handles its own collapse */}
+      <main className="flex-1 min-w-0 overflow-y-auto" style={{ marginLeft: 64 }}>
         <Outlet />
       </main>
     </div>

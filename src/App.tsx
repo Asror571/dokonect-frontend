@@ -9,9 +9,11 @@ import { LoginPage }  from './pages/auth/LoginPage';
 import RegisterPage   from './pages/auth/RegisterPage';
 
 // Admin
-import GlobalDashboard                   from './pages/admin/GlobalDashboard';
+import GlobalDashboard       from './pages/admin/GlobalDashboard';
 import { OrdersPage as AdminOrdersPage } from './pages/admin/OrdersPage';
-import { UsersPage }                     from './pages/admin/UsersPage';
+import { UsersPage }         from './pages/admin/UsersPage';
+import AdminStoresPage       from './pages/admin/StoresPage';
+import AdminPaymentsPage     from './pages/admin/PaymentsPage';
 
 // Distributor
 import { DistributorDashboard } from './pages/distributor/DistributorDashboard';
@@ -25,9 +27,9 @@ import AnalyticsPage            from './pages/distributor/AnalyticsPage';
 import SettingsPage             from './pages/distributor/SettingsPage';
 import DistributorChatPage      from './pages/distributor/ChatPage';
 import PricingPage              from './pages/distributor/PricingPage';
-import CategoriesPage           from './pages/distributor/CategoriesPage';   // ← yangi
-import ClientsPage              from './pages/distributor/ClientsPage';       // ← yangi
-import ClientDetailPage         from './pages/distributor/ClientDetailPage';  // ← yangi
+import CategoriesPage           from './pages/distributor/CategoriesPage';
+import ClientsPage              from './pages/distributor/ClientsPage';
+import ClientDetailPage         from './pages/distributor/ClientDetailPage';
 
 // Store
 import StoreDashboard   from './pages/store/StoreDashboard';
@@ -38,6 +40,7 @@ import FinancePage      from './pages/store/FinancePage';
 import StoreChatPage    from './pages/store/ChatPage';
 import CartPage         from './pages/store/CartPage';
 import AdminDistributorsPage from './pages/admin/AdminDistributorsPage';
+import AdminProductsPage from './pages/admin/AdminProducts';
 import AdminAnalyticsPage from './pages/admin/AdminAnalyticsPage';
 
 // ─── ProtectedRoute ───────────────────────────────────────────────────────────
@@ -49,57 +52,52 @@ const ProtectedRoute = ({
   roles?: string[];
 }) => {
   const { isAuthenticated, user } = useAuthStore();
-
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-
   if (roles && user?.role && !roles.includes(user.role)) {
-    if (user.role === 'ADMIN')                               return <Navigate to="/admin/dashboard"       replace />;
-    if (user.role === 'DISTRIBUTOR')                         return <Navigate to="/distributor/dashboard" replace />;
-    if (user.role === 'CLIENT' || user.role === 'STORE')     return <Navigate to="/store/dashboard"       replace />;
-    if (user.role === 'DRIVER')                              return <Navigate to="/driver/dashboard"      replace />;
+    if (user.role === 'ADMIN')                           return <Navigate to="/admin/dashboard"       replace />;
+    if (user.role === 'DISTRIBUTOR')                     return <Navigate to="/distributor/dashboard" replace />;
+    if (user.role === 'CLIENT' || user.role === 'STORE') return <Navigate to="/store/dashboard"       replace />;
+    if (user.role === 'DRIVER')                          return <Navigate to="/driver/dashboard"      replace />;
     return <Navigate to="/" replace />;
   }
-
   return <>{children}</>;
 };
 
 // ─── HomeRedirect ─────────────────────────────────────────────────────────────
 const HomeRedirect = () => {
   const { isAuthenticated, user } = useAuthStore();
-
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-
   if (user?.role === 'ADMIN')                            return <Navigate to="/admin/dashboard"       replace />;
   if (user?.role === 'DISTRIBUTOR')                      return <Navigate to="/distributor/dashboard" replace />;
   if (user?.role === 'CLIENT' || user?.role === 'STORE') return <Navigate to="/store/dashboard"       replace />;
   if (user?.role === 'DRIVER')                           return <Navigate to="/driver/dashboard"      replace />;
-
   return <Navigate to="/login" replace />;
 };
 
-// ─── App ──────────────────────────────────────────────────────────────────────
 function App() {
   return (
     <Router>
       <Toaster position="top-right" />
       <Routes>
 
-        {/* ── PUBLIC ── */}
+        {/* PUBLIC */}
         <Route path="/login"    element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
 
-        {/* ── ADMIN ── */}
+        {/* ADMIN */}
         <Route path="/admin" element={<ProtectedRoute roles={['ADMIN']}><AdminLayout /></ProtectedRoute>}>
-          <Route index            element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard" element={<GlobalDashboard />} />
-          <Route path="orders"        element={<AdminOrdersPage />} />
-          <Route path="users"         element={<UsersPage />} />
-          <Route path="distributors"  element={<AdminDistributorsPage />} />
-          <Route path="analytics"     element={<AdminAnalyticsPage />} />
-          <Route path="users"     element={<UsersPage />} />
+          <Route index               element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard"    element={<GlobalDashboard />} />
+          <Route path="orders"       element={<AdminOrdersPage />} />
+          <Route path="users"        element={<UsersPage />} />
+          <Route path="distributors" element={<AdminDistributorsPage />} />
+          <Route path="stores"       element={<AdminStoresPage />} />
+          <Route path="products"     element={<AdminProductsPage />} />
+          <Route path="payments"     element={<AdminPaymentsPage />} />
+          <Route path="analytics"    element={<AdminAnalyticsPage />} />
         </Route>
 
-        {/* ── APP LAYOUT ── */}
+        {/* APP LAYOUT */}
         <Route element={<AppLayout />}>
           <Route path="/" element={<HomeRedirect />} />
 

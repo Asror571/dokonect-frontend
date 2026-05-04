@@ -1,24 +1,20 @@
 import api from './api';
 
-// GET /api/admin/dashboard
 export const getAdminDashboardFn = async () => {
   const res = await api.get('/api/admin/dashboard');
   return res.data;
 };
 
-// GET /api/admin/orders?status=xxx
 export const getAdminOrdersFn = async (params?: { status?: string; page?: number; limit?: number }) => {
   const res = await api.get('/api/admin/orders', { params });
   return res.data;
 };
 
-// GET /api/admin/drivers/active
 export const getAdminActiveDriversFn = async () => {
   const res = await api.get('/api/admin/drivers/active');
   return res.data;
 };
 
-// GET /api/admin/users
 export const getAdminUsersFn = async (params?: {
   role?: 'ADMIN' | 'DISTRIBUTOR' | 'DRIVER' | 'CLIENT';
   status?: string;
@@ -30,7 +26,6 @@ export const getAdminUsersFn = async (params?: {
   return res.data;
 };
 
-// PATCH /api/admin/users/:userId/status
 export const updateAdminUserStatusFn = async ({
   userId,
   status,
@@ -42,8 +37,28 @@ export const updateAdminUserStatusFn = async ({
   return res.data;
 };
 
-// GET /api/admin/analytics?period=xxx
-export const getAdminAnalyticsFn = async (period: string) => {
+export const getAdminAnalyticsFn = async (period = '30d') => {
   const res = await api.get('/api/admin/analytics', { params: { period } });
+  return res.data;
+};
+
+// ── Distributors ──────────────────────────────────────────────────────────────
+export const getAdminDistributorsFn = async () => {
+  const res = await api.get('/api/admin/distributors');
+  return res.data;
+};
+
+export const createAdminDistributorFn = async (data: any) => {
+  const res = await api.post('/api/admin/distributors', data);
+  return res.data;
+};
+
+export const updateAdminDistributorFn = async ({ id, data }: { id: string; data: any }) => {
+  const res = await api.patch(`/api/admin/distributors/${id}`, data);
+  return res.data;
+};
+
+export const deleteAdminDistributorFn = async (id: string) => {
+  const res = await api.delete(`/api/admin/distributors/${id}`);
   return res.data;
 };

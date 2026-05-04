@@ -37,6 +37,8 @@ import DistributorsPage from './pages/store/DistributorsPage';
 import FinancePage      from './pages/store/FinancePage';
 import StoreChatPage    from './pages/store/ChatPage';
 import CartPage         from './pages/store/CartPage';
+import AdminDistributorsPage from './pages/admin/AdminDistributorsPage';
+import AdminAnalyticsPage from './pages/admin/AdminAnalyticsPage';
 
 // ─── ProtectedRoute ───────────────────────────────────────────────────────────
 const ProtectedRoute = ({
@@ -90,7 +92,10 @@ function App() {
         <Route path="/admin" element={<ProtectedRoute roles={['ADMIN']}><AdminLayout /></ProtectedRoute>}>
           <Route index            element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<GlobalDashboard />} />
-          <Route path="orders"    element={<AdminOrdersPage />} />
+          <Route path="orders"        element={<AdminOrdersPage />} />
+          <Route path="users"         element={<UsersPage />} />
+          <Route path="distributors"  element={<AdminDistributorsPage />} />
+          <Route path="analytics"     element={<AdminAnalyticsPage />} />
           <Route path="users"     element={<UsersPage />} />
         </Route>
 

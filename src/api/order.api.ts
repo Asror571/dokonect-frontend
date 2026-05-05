@@ -13,6 +13,7 @@ export interface CreateOrderPayload {
   items: OrderItem[];
   deliveryAddress?: string | Record<string, any>;
   deliveryTimeSlot?: string;
+  deliveryDate?: string; 
   notes?: string;
   deliveryFee?: number;
   discount?: number;

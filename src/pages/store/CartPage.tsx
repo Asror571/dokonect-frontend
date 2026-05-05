@@ -4,15 +4,19 @@ import { useMutation } from '@tanstack/react-query';
 import { createOrderFn } from '../../api/order.api';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { Trash2, Plus, Minus, ShoppingCart, MapPin, ArrowRight, Package } from 'lucide-react';
+import { Trash2, Plus, Minus, ShoppingCart, MapPin, ArrowRight, Package, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
 const CartPage = () => {
   const { items, removeItem, updateQuantity, clearCart, totalAmount } = useCartStore();
-  const [address, setAddress] = useState('');
-  const [note, setNote]       = useState('');
+  const [address,      setAddress]      = useState('');
+  const [note,         setNote]         = useState('');
+  const [deliveryDate, setDeliveryDate] = useState('');
   const navigate = useNavigate();
+
+  // Minimum sana = bugun
+  const today = new Date().toISOString().split('T')[0];
 
   const { mutate, isPending } = useMutation({
     mutationFn: createOrderFn,
@@ -27,8 +31,9 @@ const CartPage = () => {
   });
 
   const handleCheckout = () => {
-    if (!items.length) return toast.error("Savat bo'sh");
-    if (!address.trim()) return toast.error('Manzilni kiriting');
+    if (!items.length)     return toast.error("Savat bo'sh");
+    if (!address.trim())   return toast.error('Manzilni kiriting');
+    if (!deliveryDate)     return toast.error('Yetkazib berish sanasini tanlang');
 
     const distributorIds = [...new Set(items.map(i => i.distributorId))];
     if (distributorIds.length > 1) {
@@ -36,9 +41,10 @@ const CartPage = () => {
     }
 
     mutate({
-      distributorId: items[0].distributorId,
+      distributorId:   items[0].distributorId,
       deliveryAddress: address,
-      notes: note,
+      deliveryDate:    deliveryDate,
+      notes:           note,
       items: items.map(i => ({ productId: i.productId, quantity: i.quantity })),
     });
   };
@@ -51,7 +57,7 @@ const CartPage = () => {
         </div>
         <h2 className="text-lg font-semibold text-slate-800 mb-1">Savat bo'sh</h2>
         <p className="text-slate-500 text-sm mb-6 max-w-xs">Katalogdan mahsulot tanlang va savatga qo'shing</p>
-        <Button onClick={() => navigate('/catalog')}>Katalogga o'tish</Button>
+        <Button onClick={() => navigate('/store/catalog')}>Katalogga o'tish</Button>
       </div>
     );
   }
@@ -64,6 +70,7 @@ const CartPage = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
         {/* Items */}
         <div className="lg:col-span-2 space-y-3">
           {items.map((item) => (
@@ -85,19 +92,13 @@ const CartPage = () => {
                 </p>
                 <div className="flex items-center gap-2 mt-2">
                   <div className="flex items-center gap-1 bg-slate-50 rounded-lg p-0.5 border border-slate-200">
-                    <button
-                      onClick={() => updateQuantity(item.productId, item.quantity - 1)}
-                      disabled={item.quantity <= 1}
-                      className="w-6 h-6 rounded-md bg-white shadow-sm flex items-center justify-center disabled:opacity-40 hover:bg-slate-100 transition-colors"
-                    >
+                    <button onClick={() => updateQuantity(item.productId, item.quantity - 1)} disabled={item.quantity <= 1}
+                      className="w-6 h-6 rounded-md bg-white shadow-sm flex items-center justify-center disabled:opacity-40 hover:bg-slate-100 transition-colors">
                       <Minus className="w-3 h-3 text-slate-600" />
                     </button>
                     <span className="w-8 text-center text-sm font-semibold text-slate-800">{item.quantity}</span>
-                    <button
-                      onClick={() => updateQuantity(item.productId, item.quantity + 1)}
-                      disabled={item.quantity >= item.stock}
-                      className="w-6 h-6 rounded-md bg-white shadow-sm flex items-center justify-center disabled:opacity-40 hover:bg-slate-100 transition-colors"
-                    >
+                    <button onClick={() => updateQuantity(item.productId, item.quantity + 1)} disabled={item.quantity >= item.stock}
+                      className="w-6 h-6 rounded-md bg-white shadow-sm flex items-center justify-center disabled:opacity-40 hover:bg-slate-100 transition-colors">
                       <Plus className="w-3 h-3 text-slate-600" />
                     </button>
                   </div>
@@ -106,10 +107,8 @@ const CartPage = () => {
               </div>
 
               <div className="flex flex-col items-end gap-3 shrink-0">
-                <button
-                  onClick={() => removeItem(item.productId)}
-                  className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                >
+                <button onClick={() => removeItem(item.productId)}
+                  className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
                   <Trash2 className="w-4 h-4" />
                 </button>
                 <span className="text-sm font-bold text-slate-800">
@@ -126,6 +125,7 @@ const CartPage = () => {
             <h3 className="font-semibold text-slate-800 mb-4">Buyurtma</h3>
 
             <div className="space-y-3 mb-4">
+              {/* Manzil */}
               <Input
                 label="Yetkazib berish manzili"
                 placeholder="Aniq manzilni kiriting"
@@ -133,6 +133,32 @@ const CartPage = () => {
                 onChange={(e) => setAddress(e.target.value)}
                 leftIcon={<MapPin className="w-4 h-4" />}
               />
+
+              {/* Yetkazib berish sanasi */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Yetkazib berish sanasi <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                  <input
+                    type="date"
+                    min={today}
+                    value={deliveryDate}
+                    onChange={(e) => setDeliveryDate(e.target.value)}
+                    className={`w-full pl-10 pr-3.5 py-2.5 bg-white border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all shadow-sm ${
+                      !deliveryDate ? 'border-slate-200' : 'border-violet-400'
+                    }`}
+                  />
+                </div>
+                {!deliveryDate && (
+                  <p className="text-[11px] text-amber-500 flex items-center gap-1">
+                    <Calendar className="w-3 h-3" /> Sana tanlanmagan
+                  </p>
+                )}
+              </div>
+
+              {/* Izoh */}
               <div className="space-y-1.5">
                 <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">
                   Izoh (ixtiyoriy)
@@ -146,9 +172,22 @@ const CartPage = () => {
               </div>
             </div>
 
-            <div className="border-t border-slate-100 pt-4 mb-4">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-500">Jami:</span>
+            {/* Jami */}
+            <div className="border-t border-slate-100 pt-4 mb-4 space-y-2">
+              <div className="flex justify-between items-center text-sm text-slate-500">
+                <span>{items.reduce((s, i) => s + i.quantity, 0)} ta mahsulot</span>
+                <span>{totalAmount().toLocaleString('uz-UZ')} UZS</span>
+              </div>
+              {deliveryDate && (
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-slate-500">Yetkazish sanasi:</span>
+                  <span className="font-semibold text-violet-600">
+                    {new Date(deliveryDate).toLocaleDateString('uz-UZ', { day: '2-digit', month: 'long', year: 'numeric' })}
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between items-center border-t border-slate-100 pt-2">
+                <span className="font-semibold text-slate-700">Jami:</span>
                 <span className="text-lg font-bold text-violet-600">
                   {totalAmount().toLocaleString('uz-UZ')} UZS
                 </span>

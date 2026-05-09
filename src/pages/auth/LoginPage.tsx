@@ -169,5 +169,6 @@ export const LoginPage: React.FC = () => {
         </div>
       </motion.div>
     </div>
+    
   );
 };

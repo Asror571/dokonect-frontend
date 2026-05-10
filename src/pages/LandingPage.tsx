@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, X, Store, Truck, ChevronRight, Play, Clock, Package, TrendingUp, Users, BarChart3, CheckCircle2 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import api from '../api/api';
 import toast from 'react-hot-toast';
+import DokonectLogo from '../components/ui/DokonectLogo';
 
 /* ─── Logo ──────────────────────────────────────────────────────────────────── */
 const Logo = ({ size = 36 }: { size?: number }) => (
@@ -26,9 +27,10 @@ const Logo = ({ size = 36 }: { size?: number }) => (
 );
 
 /* ─── Data ──────────────────────────────────────────────────────────────────── */
-const TEST_ACCOUNTS = [
-  { role: 'Distribyutor', nav: 'DISTRIBUTOR', phone: '+998901234567', password: '123456', icon: Truck, tag: 'Mahsulot sotish va boshqarish', color: '#4A90E2' },
-  { role: "Do'kon egasi", nav: 'CLIENT', phone: '+998901234500', password: '123456', icon: Store, tag: 'Mahsulot buyurtma qilish', color: '#7B5CE7' },
+const ALL_TEST_ACCOUNTS = [
+  { role: 'Distribyutor', nav: 'DISTRIBUTOR', phone: '+998901234567', password: '123456', icon: Truck, tag: 'Mahsulot sotish va boshqarish', color: '#4A90E2', mobileOnly: false },
+  { role: "Do'kon egasi", nav: 'CLIENT', phone: '+998901234500', password: '123456', icon: Store, tag: 'Mahsulot buyurtma qilish', color: '#7B5CE7', mobileOnly: false },
+  { role: 'Haydovchi', nav: 'DRIVER', phone: '+998901234599', password: '123456', icon: Truck, tag: 'Yetkazib berish', color: '#00C2A8', mobileOnly: true },
 ];
 
 /* ─── Main ──────────────────────────────────────────────────────────────────── */
@@ -37,8 +39,30 @@ export default function LandingPage() {
   const { setAuth } = useAuthStore();
   const [showDemo, setShowDemo] = useState(false);
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
 
-  const handleDemo = async (acc: typeof TEST_ACCOUNTS[0]) => {
+  // Check if mobile on mount and resize
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Check scroll position for navbar
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Filter accounts based on screen size
+  const TEST_ACCOUNTS = ALL_TEST_ACCOUNTS.filter(acc => !acc.mobileOnly || isMobile);
+
+  const handleDemo = async (acc: typeof ALL_TEST_ACCOUNTS[0]) => {
     setLoadingId(acc.role);
     try {
       const res = await api.post('/api/auth/login', { phone: acc.phone, password: acc.password });
@@ -89,32 +113,35 @@ export default function LandingPage() {
       />
 
       {/* ── Navbar ── */}
-      <nav className="relative z-30 flex items-center justify-between px-4 sm:px-6 md:px-12 py-4 sm:py-5 max-w-7xl mx-auto">
-        <div className="flex items-center gap-2 sm:gap-2.5 cursor-pointer" onClick={() => navigate('/')}>
-          <Logo size={28} />
-          <span className="text-lg sm:text-xl font-bold text-white">Dokonect</span>
-        </div>
-        <div className="flex items-center gap-2 sm:gap-3">
-          <button
-            onClick={() => setShowDemo(true)}
-            className="hidden sm:flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-gray-300 hover:text-white transition-colors cursor-pointer">
-            <Play className="w-3.5 sm:w-4 h-3.5 sm:h-4" /> Demo
-          </button>
-          <button
-            onClick={() => navigate('/login')}
-            className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-gray-300 hover:text-white transition-colors cursor-pointer">
-            Kirish
-          </button>
-          <button
-            onClick={() => navigate('/register')}
-            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-1.5 sm:py-2.5 text-xs sm:text-sm font-semibold text-white rounded-lg bg-gradient-to-r from-[#4A90E2] to-[#7B5CE7] hover:shadow-lg hover:shadow-blue-500/25 transition-all cursor-pointer">
-            Boshlash <ArrowRight className="w-3 sm:w-4 h-3 sm:h-4" />
-          </button>
+      <nav
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-[#0A0F1E]/95 backdrop-blur-lg border-b border-white/10 shadow-lg' : 'bg-transparent'
+          }`}>
+        <div className="flex items-center justify-between px-4 sm:px-6 md:px-12 py-4 sm:py-5 max-w-7xl mx-auto">
+          <div className="cursor-pointer" onClick={() => navigate('/')}>
+            <DokonectLogo size={48} variant="full" />
+          </div>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              onClick={() => setShowDemo(true)}
+              className="hidden sm:flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-gray-300 hover:text-white transition-colors cursor-pointer">
+              <Play className="w-3.5 sm:w-4 h-3.5 sm:h-4" /> Demo
+            </button>
+            <button
+              onClick={() => navigate('/login')}
+              className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-gray-300 hover:text-white transition-colors cursor-pointer">
+              Kirish
+            </button>
+            <button
+              onClick={() => navigate('/register')}
+              className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-1.5 sm:py-2.5 text-xs sm:text-sm font-semibold text-white rounded-lg bg-gradient-to-r from-[#4A90E2] to-[#7B5CE7] hover:shadow-lg hover:shadow-blue-500/25 transition-all cursor-pointer">
+              Boshlash <ArrowRight className="w-3 sm:w-4 h-3 sm:h-4" />
+            </button>
+          </div>
         </div>
       </nav>
 
       {/* ── HERO ── */}
-      <section className="relative z-10 px-4 sm:px-6 py-16 sm:py-20 md:py-32 max-w-6xl mx-auto text-center">
+      <section className="relative z-10 px-4 sm:px-6 pt-24 sm:pt-28 md:pt-36 pb-16 sm:pb-20 md:pb-32 max-w-6xl mx-auto text-center">
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

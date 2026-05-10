@@ -29,7 +29,6 @@ const Logo = ({ size = 36 }: { size?: number }) => (
 const TEST_ACCOUNTS = [
   { role: 'Distribyutor', nav: 'DISTRIBUTOR', phone: '+998901234567', password: '123456', icon: Truck, tag: 'Mahsulot sotish va boshqarish', color: '#4A90E2' },
   { role: "Do'kon egasi", nav: 'CLIENT', phone: '+998901234500', password: '123456', icon: Store, tag: 'Mahsulot buyurtma qilish', color: '#7B5CE7' },
-  { role: 'Haydovchi', nav: 'DRIVER', phone: '+998901234599', password: '123456', icon: Truck, tag: 'Yetkazib berish', color: '#00C2A8' },
 ];
 
 /* ─── Main ──────────────────────────────────────────────────────────────────── */

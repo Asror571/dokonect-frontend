@@ -113,9 +113,17 @@ export default function LandingPage() {
       />
 
       {/* ── Navbar ── */}
+      {/* <nav
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-[#081028]/95 backdrop-blur-lg border-b border-white/10 shadow-lg' : 'bg-[#081028]'
+          }`}> */}
+
       <nav
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-[#0A0F1E]/95 backdrop-blur-lg border-b border-white/10 shadow-lg' : 'bg-transparent'
-          }`}>
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled
+          ? "bg-[#0B0F2A]/92 backdrop-blur-xl border-b border-indigo-500/10 shadow-lg"
+          : "bg-[#081028]"
+          }`}
+      >
+
         <div className="flex items-center justify-between px-4 sm:px-6 md:px-12 py-4 sm:py-5 max-w-7xl mx-auto">
           <div className="cursor-pointer" onClick={() => navigate('/')}>
             <DokonectLogo size={48} variant="full" />

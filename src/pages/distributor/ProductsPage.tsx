@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Filter, RefreshCw } from 'lucide-react';
+import { Plus, Search, Filter, RefreshCw, TrendingUp, Package } from 'lucide-react';
 import { ProductCard } from '../../components/ui/ProductCard';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getProductsFn, deleteProductFn } from '../../api/product.api';
+import { getDistributorProductsDashboardFn } from '../../api/distributor.api';
 import { useAuthStore } from '../../store/authStore';
 import toast from 'react-hot-toast';
+import SalesChart from '../../components/analytics/SalesChart';
 
 export const ProductsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -29,6 +31,23 @@ export const ProductsPage: React.FC = () => {
       }),
   });
 
+  // Products dashboard data
+  const { data: dashboardData, isLoading: dashboardLoading, error: dashboardError } = useQuery({
+    queryKey: ['distributor-products-dashboard'],
+    queryFn: getDistributorProductsDashboardFn,
+    staleTime: 60_000,
+  });
+
+  // Debug: console log
+  React.useEffect(() => {
+    if (dashboardData) {
+      console.log('📊 Dashboard data:', dashboardData);
+    }
+    if (dashboardError) {
+      console.error('❌ Dashboard error:', dashboardError);
+    }
+  }, [dashboardData, dashboardError]);
+
   const { mutate: deleteProduct } = useMutation({
     mutationFn: (id: string) => deleteProductFn(id),
     onSuccess: () => {
@@ -41,6 +60,8 @@ export const ProductsPage: React.FC = () => {
   });
 
   const products = data?.products || [];
+  const topSellingProducts = dashboardData?.topSellingProducts || [];
+  const mostOrderedProducts = dashboardData?.mostOrderedProducts || [];
 
   return (
     <div className="space-y-6">
@@ -59,6 +80,94 @@ export const ProductsPage: React.FC = () => {
           <Plus className="w-4 h-4" />
           Mahsulot qo'shish
         </button>
+      </div>
+
+      {/* Top Selling & Most Ordered */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Eng ko'p sotilgan */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Package className="w-5 h-5 text-amber-500" />
+            <h2 className="text-lg font-bold text-slate-900">Eng ko'p sotilgan</h2>
+          </div>
+          {dashboardLoading ? (
+            <div className="flex items-center justify-center h-48">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500" />
+            </div>
+          ) : topSellingProducts.length > 0 ? (
+            <div className="space-y-3">
+              {topSellingProducts.slice(0, 5).map((item: any) => (
+                <div
+                  key={item.id}
+                  onClick={() => navigate(`/distributor/products/${item.id}`)}
+                  className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  <div className="w-12 h-12 rounded-lg bg-slate-200 flex items-center justify-center shrink-0">
+                    {item.images?.[0]?.url ? (
+                      <img src={item.images[0].url} alt={item.name} className="w-full h-full object-cover rounded-lg" />
+                    ) : (
+                      <Package className="w-6 h-6 text-slate-400" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-slate-900 truncate">{item.name}</p>
+                    <p className="text-xs text-slate-500">Sotildi: {item.soldQuantity || 0} ta</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold text-emerald-600">
+                      {(item.revenue || 0).toLocaleString('uz-UZ')} UZS
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-48 text-slate-400">
+              <Package className="w-12 h-12 mb-2 opacity-30" />
+              <p className="text-sm">Ma'lumot yo'q</p>
+            </div>
+          )}
+        </div>
+
+        {/* Savdo dinamikasi */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <TrendingUp className="w-5 h-5 text-sky-500" />
+            <h2 className="text-lg font-bold text-slate-900">Savdo dinamikasi</h2>
+          </div>
+          {dashboardLoading ? (
+            <div className="flex items-center justify-center h-48">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-500" />
+            </div>
+          ) : mostOrderedProducts.length > 0 ? (
+            <div className="space-y-3">
+              {mostOrderedProducts.slice(0, 5).map((item: any) => (
+                <div
+                  key={item.id}
+                  onClick={() => navigate(`/distributor/products/${item.id}`)}
+                  className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  <div className="w-12 h-12 rounded-lg bg-slate-200 flex items-center justify-center shrink-0">
+                    {item.images?.[0]?.url ? (
+                      <img src={item.images[0].url} alt={item.name} className="w-full h-full object-cover rounded-lg" />
+                    ) : (
+                      <Package className="w-6 h-6 text-slate-400" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-slate-900 truncate">{item.name}</p>
+                    <p className="text-xs text-slate-500">Buyurtmalar: {item.orderCount || 0} ta</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-48 text-slate-400">
+              <TrendingUp className="w-12 h-12 mb-2 opacity-30" />
+              <p className="text-sm">Ma'lumot yo'q</p>
+            </div>
+          )}
+        </div>
       </div>
 
       <div>

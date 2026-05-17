@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: '',   // Vercel proxy orqali o'tadi
+  baseURL: import.meta.env.VITE_API_URL ?? '',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -44,7 +44,7 @@ api.interceptors.response.use(
           return Promise.reject(error);
         }
 
-        const response = await axios.post('/api/auth/refresh-token', { refreshToken });
+        const response = await axios.post(`${import.meta.env.VITE_API_URL ?? ''}/api/auth/refresh-token`, { refreshToken });
 
         if (response.data?.token || response.data?.accessToken) {
           const newToken = response.data.token ?? response.data.accessToken;
